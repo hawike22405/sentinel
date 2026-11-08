@@ -25,4 +25,5 @@
 - Fixed: CSP blocked inline styles; feed and certificate panel were static; theme icon showed a literal escape; engines now Node >= 22.
 - Next: add automated tests for isPrivateIp, scan(), and the report API; the existing gates did not catch these bugs.
 - Completed: removed all demo data (cleared scans + reports from SQLite, deleted data/sentinel.db*; replaced static demo check text with neutral "Not scanned yet" placeholders).
+- Completed: changed dark mode background from navy (#0b1120) to AMOLED black (#000000), and re-tuned surface/glass tokens so dark mode reads as pure black without blue cast.
 

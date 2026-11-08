@@ -7,8 +7,8 @@ Dark Security / Threat Intelligence with a manual light/dark theme. Near-black c
 
 ```yaml
 colors:
-  base: "#0b1120"
-  surface: "rgba(15,23,42,0.5)"
+  base: "#000000"
+  surface: "rgba(20,20,20,0.55)"
   border: "rgba(255,255,255,0.08)"
   text: "#f8fafc"
   textMuted: "#94a3b8"
@@ -16,7 +16,7 @@ colors:
   danger: "#ef4444"
   warning: "#f59e0b"
   success: "#22c55e"
-  glassBg: "rgba(15,23,42,0.42)"
+  glassBg: "rgba(20,20,20,0.45)"
   glassBorder: "rgba(255,255,255,0.07)"
 typography:
   body: ["Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"]
@@ -40,7 +40,7 @@ components:
 
 
 Dark (default):
-- bg: #0b1120, surface: rgba(15,23,42,0.5), border: rgba(255,255,255,0.08)
+- bg: #000000, surface: rgba(20,20,20,0.55), border: rgba(255,255,255,0.08)
 - text: #f8fafc, text-muted: #94a3b8
 - accent: #38bdf8 (sky), danger: #ef4444, warning: #f59e0b, success: #22c55e
 - glass-bg: rgba(15,23,42,0.42), glass-border: rgba(255,255,255,0.07)
