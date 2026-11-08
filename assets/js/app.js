@@ -117,7 +117,7 @@
     setTimeout(finishLoad, 700);
   });
 
-  // ---------- URL scanner (simulated detection) ----------
+  // ---------- URL scanner (calls POST /api/scan) ----------
   const form = document.getElementById('scan-form');
   const input = document.getElementById('url-input');
   const errorEl = document.getElementById('form-error');

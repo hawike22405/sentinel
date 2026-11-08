@@ -24,4 +24,5 @@
 - Fixed: community reports now feed the threat check and score; strict rate limiter was defined but unused; malformed JSON returned 500; report type/source are now validated.
 - Fixed: CSP blocked inline styles; feed and certificate panel were static; theme icon showed a literal escape; engines now Node >= 22.
 - Next: add automated tests for isPrivateIp, scan(), and the report API; the existing gates did not catch these bugs.
+- Completed: removed all demo data (cleared scans + reports from SQLite, deleted data/sentinel.db*; replaced static demo check text with neutral "Not scanned yet" placeholders).
 
