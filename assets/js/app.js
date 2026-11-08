@@ -335,95 +335,65 @@
 
   loadFeed();
 
-  // ---------- Canvas globe (magicui-style reference visual) ----------
-  const canvas = document.getElementById('globe');
-  if (canvas) {
-    const ctx = canvas.getContext('2d');
-    let width, height;
-    let points = [];
-    let angle = 0;
-    let rafId;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // ---------- Terminal animation (replaces globe visual) ----------
+  const typingEl = document.getElementById('terminal-typing');
+  const cursorEl = document.getElementById('terminal-cursor');
 
-    function resize() {
-      width = canvas.parentElement.clientWidth || 340;
-      height = canvas.parentElement.clientHeight || 340;
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = width + 'px';
-      canvas.style.height = height + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      seedPoints();
+  const terminalLines = [
+    { text: 'sentinel@cli:~$ ./scan --target example.com --deep', delay: 400 },
+    { text: '  [1/4] threat analysis: no known-bad listings found', delay: 600 },
+    { text: '  [2/4] web security: strict-transport-security missing', delay: 600 },
+    { text: '  [3/4] certificate: valid chain — issuer Sectigo R3', delay: 600 },
+    { text: '  [4/4] threat intelligence: 0 community reports', delay: 600 },
+    { text: 'sentinel@cli:~$ scan complete — risk score: 0 (safe)', delay: 800 },
+    { text: '', delay: 1200 },
+    { text: 'sentinel@cli:~$ ./scan --target secure-account-login-verify-paypal.example.com --deep', delay: 400 },
+    { text: '  [1/4] threat analysis: 5 credential-harvesting keywords detected', delay: 600 },
+    { text: '  [2/4] web security: multiple headers missing', delay: 600 },
+    { text: '  [3/4] certificate: self-signed intermediate', delay: 600 },
+    { text: '  [4/4] threat intelligence: 2 community reports in 24h', delay: 600 },
+    { text: 'sentinel@cli:~$ scan complete — risk score: 89 (malicious)', delay: 800 },
+  ];
+
+  let lineIndex = 0;
+  let charIndex = 0;
+  let isTyping = true;
+  let rafId = null;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function typeNext() {
+    if (!typingEl || !cursorEl) return;
+    if (reduced) {
+      // Under reduced motion: show all lines at once, no typing
+      typingEl.textContent = terminalLines.map(l => l.text).join('\n');
+      cursorEl.style.opacity = '0';
+      return;
     }
 
-    function seedPoints() {
-      points = [];
-      const count = 70;
-      const r = Math.min(width, height) * 0.42;
-      const cx = width / 2;
-      const cy = height / 2;
-      for (let i = 0; i < count; i++) {
-        const phi = Math.acos(-1 + (2 * i) / count);
-        const theta = Math.sqrt(count * Math.PI) * phi;
-        points.push({
-          x: cx + r * Math.sin(phi) * Math.cos(theta),
-          y: cy + r * Math.sin(phi) * Math.sin(theta),
-          z: r * Math.cos(phi),
-          vx: (Math.random() - 0.5) * 0.12,
-          vy: (Math.random() - 0.5) * 0.12,
-        });
-      }
+    const line = terminalLines[lineIndex];
+    if (!line) {
+      // Finished all lines, loop back
+      lineIndex = 0;
+      charIndex = 0;
     }
 
-    function rotateY(p, a) {
-      const s = Math.sin(a);
-      const c = Math.cos(a);
-      const x = p.x * c + p.z * s;
-      const z = -p.x * s + p.z * c;
-      return { x, y: p.y, z };
+    const currentLine = terminalLines[lineIndex];
+    if (charIndex < currentLine.text.length) {
+      typingEl.textContent = currentLine.text.slice(0, charIndex + 1);
+      charIndex++;
+      setTimeout(typeNext, 40);
+    } else {
+      // Line complete, move to next after delay
+      setTimeout(() => {
+        lineIndex++;
+        charIndex = 0;
+        typeNext();
+      }, currentLine.delay);
     }
+  }
 
-    function project(p) {
-      const focal = 560;
-      const scale = focal / (focal + p.z);
-      return { x: (p.x - width / 2) * scale + width / 2, y: (p.y - height / 2) * scale + height / 2, scale };
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, width, height);
-      angle += reduced ? 0 : 0.009;
-      const projected = points.map((p) => project(rotateY(p, angle)));
-      // draw lines between nearby points
-      for (let i = 0; i < projected.length; i++) {
-        for (let j = i + 1; j < projected.length; j++) {
-          const dx = projected[i].x - projected[j].x;
-          const dy = projected[i].y - projected[j].y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < 110) {
-            const alpha = 1 - d / 110;
-            ctx.beginPath();
-            ctx.moveTo(projected[i].x, projected[i].y);
-            ctx.lineTo(projected[j].x, projected[j].y);
-            ctx.strokeStyle = 'rgba(56, 189, 248, ' + (alpha * 0.35) + ')';
-            ctx.lineWidth = 0.8 * alpha;
-            ctx.stroke();
-          }
-        }
-      }
-      // draw points
-      for (let i = 0; i < projected.length; i++) {
-        const p = projected[i];
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 1.6 * p.scale, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(56, 189, 248, ' + (0.5 + 0.5 * p.scale) + ')';
-        ctx.fill();
-      }
-      rafId = requestAnimationFrame(draw);
-    }
-
-    window.addEventListener('resize', resize);
-    resize();
-    draw();
+  // Start the animation after the page has loaded
+  if (typingEl && cursorEl) {
+    setTimeout(typeNext, 800);
   }
 })();
