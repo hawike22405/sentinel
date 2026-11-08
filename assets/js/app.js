@@ -139,8 +139,12 @@
       .replace(/'/g, '&#039;');
   }
 
-  function addClass(el, cls) { el.classList.add(cls); }
-  function removeClass(el, cls) { el.classList.remove(cls); }
+  function addClass(el, cls) {
+    cls.split(/\s+/).forEach((c) => c && el.classList.add(c));
+  }
+  function removeClass(el, cls) {
+    cls.split(/\s+/).forEach((c) => c && el.classList.remove(c));
+  }
 
   function renderCheck(checkEl, status, label, detail) {
     const textEl = checkEl.querySelector('.text');
