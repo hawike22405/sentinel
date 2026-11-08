@@ -55,7 +55,7 @@ sentinel/
 
 ### Prerequisites
 
-- Node.js 18+ (tested on Node 26)
+- Node.js 22+ (required by better-sqlite3 13; tested on Node 22)
 - npm
 
 ### Install dependencies

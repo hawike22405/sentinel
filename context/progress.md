@@ -16,3 +16,12 @@
 ## Next steps
 - Review rendered output in a browser at 1440/1024/768/390 widths; fix any visual defects (run `npm start` to serve frontend + API together, or open index.html directly for the static shell).
 - If real scanning, CA integration, accounts, or payments are requested, flag as explicit non-goals per PRD.md (out of scope for this slice).
+
+## Debug and review pass (backend + frontend)
+- Fixed: whole repo was served by express.static('.') (source, data/sentinel.db); now only /assets, /public and index.html.
+- Fixed: SSRF guard (broken regex, IPv6 and DNS-rebinding gaps); private ranges now checked at connect time.
+- Fixed: security-header check always failed (`missing` scoped inside try); long-URL signal never fired; self-signed and chain checks were wrong; cert port ignored.
+- Fixed: community reports now feed the threat check and score; strict rate limiter was defined but unused; malformed JSON returned 500; report type/source are now validated.
+- Fixed: CSP blocked inline styles; feed and certificate panel were static; theme icon showed a literal escape; engines now Node >= 22.
+- Next: add automated tests for isPrivateIp, scan(), and the report API; the existing gates did not catch these bugs.
+

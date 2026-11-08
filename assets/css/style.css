@@ -992,3 +992,13 @@ canvas#globe {
 /* ---- Utilities ---- */
 .text-center { text-align: center; }
 .mt-6 { margin-top: 40px; }
+
+/* Added: classes replacing inline styles (blocked by the CSP) + report form */
+.gauge-dot--success { background: var(--color-success); }
+.gauge-dot--warning { background: var(--color-warning); }
+.gauge-dot--danger { background: var(--color-danger); }
+.cert-fp { overflow-wrap: anywhere; text-align: right; max-width: 60%; }
+.report-form { margin-top: var(--space-6, 1.5rem); display: flex; gap: .75rem; flex-wrap: wrap; }
+.report-form .input { flex: 1 1 14rem; }
+.report-form select.input { flex: 0 1 10rem; }
+.form-ok { color: var(--color-success); }

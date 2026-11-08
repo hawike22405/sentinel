@@ -17,7 +17,8 @@
   }
 
   function loadTheme() {
-    const stored = localStorage.getItem(THEME_KEY);
+    let stored = null;
+    try { stored = localStorage.getItem(THEME_KEY); } catch { /* storage blocked */ }
     const theme = stored || getSystemTheme();
     setTheme(theme, false);
   }
@@ -28,7 +29,7 @@
       document.body.style.transition = 'none';
     }
     html.setAttribute('data-theme', theme);
-    localStorage.setItem(THEME_KEY, theme);
+    try { localStorage.setItem(THEME_KEY, theme); } catch { /* storage blocked */ }
     themeIcon.textContent = theme === 'light' ? '\u263E' : '\u2600'; // moon when light (->dark), sun when dark (->light)
     themeIcon.setAttribute('aria-label', theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
     themeToggle.setAttribute('aria-pressed', theme === 'light');
@@ -46,7 +47,9 @@
   });
 
   window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
-    if (!localStorage.getItem(THEME_KEY)) {
+    let saved = null;
+    try { saved = localStorage.getItem(THEME_KEY); } catch { /* storage blocked */ }
+    if (!saved) {
       setTheme(e.matches ? 'light' : 'dark', true);
     }
   });
@@ -69,6 +72,7 @@
   }
 
   window.addEventListener('mousemove', (e) => {
+    if (!outline) return;
     mouse.x = e.clientX;
     mouse.y = e.clientY;
     if (!outline.classList.contains('visible')) {
@@ -84,18 +88,17 @@
 
   function clickRipple(x, y) {
     outline.classList.add('click-ripple');
-    outline.style.left = x + 'px';
-    outline.style.top = y + 'px';
     setTimeout(() => outline.classList.remove('click-ripple'), 500);
   }
 
-  document.querySelectorAll('a, button, .btn, input, .feed-item, .card-glass').forEach((el) => {
+  document.querySelectorAll('a, button, .btn, input, select, .card-glass').forEach((el) => {
     el.addEventListener('mouseenter', () => setHovered(true));
     el.addEventListener('mouseleave', () => setHovered(false));
     el.addEventListener('mousedown', (e) => clickRipple(e.clientX, e.clientY));
   });
 
-  updateCursor();
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
+  if (dot && outline && finePointer) updateCursor();
 
   // ---------- Load entrance ----------
   const preload = document.getElementById('page-preload');
@@ -107,7 +110,7 @@
     }
     html.classList.remove('is-loading');
     document.body.classList.remove('is-loading');
-    html.classList.add('m-cursor');
+    if (finePointer) html.classList.add('m-cursor');
   }
 
   window.addEventListener('load', () => {
@@ -170,7 +173,8 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
     });
-    const body = await res.json();
+    let body = {};
+    try { body = await res.json(); } catch { /* non-JSON error page */ }
     if (!res.ok) {
       throw new Error(body.error || 'Scan failed.');
     }
@@ -193,16 +197,25 @@
     verdictEl.textContent = verdictLabel;
     verdictEl.className = 'badge ' + badge;
     const firstDetail = (checkResults && checkResults.reputation && checkResults.reputation.detail) || '';
-    explanationEl.innerHTML = error ||
-      (verdictLabel + ' ' + (firstDetail ? '&mdash; ' + escapeHtml(firstDetail) : 'No strong risk signals detected.'));
+    explanationEl.textContent = error ||
+      (verdictLabel + ' ' + (firstDetail ? '\u2014 ' + firstDetail : 'No strong risk signals detected.'));
     renderCheck(checks.reputation, checkResults.reputation.status, 'Reputation', checkResults.reputation.detail);
     renderCheck(checks.headers, checkResults.headers.status, 'Security headers', checkResults.headers.detail);
     renderCheck(checks.certificate, checkResults.certificate.status, 'Certificate', checkResults.certificate.detail);
     renderCheck(checks.threat, checkResults.threat.status, 'Threat intelligence', checkResults.threat.detail);
+    if (url) renderCert(checkResults.certificate.info);
+  }
+
+  function renderCert(info) {
+    const set = (id, v) => { document.getElementById(id).textContent = v || 'Unavailable'; };
+    set('cert-issuer', info && info.issuer);
+    set('cert-expires', info && info.expires);
+    set('cert-chain', info && info.chain);
+    set('cert-fingerprint', info && info.fingerprint);
   }
 
   function showError(message) {
-    errorEl.innerHTML = escapeHtml(message);
+    errorEl.textContent = message;
     input.focus();
   }
 
@@ -243,6 +256,84 @@
     },
     error: null,
   });
+
+
+  // ---------- Community threat feed (backend /api/feed) ----------
+  const feedList = document.getElementById('feed-list');
+  const reportForm = document.getElementById('report-form');
+  const reportMsg = document.getElementById('report-msg');
+
+  function timeAgo(iso) {
+    const secs = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (Number.isNaN(secs)) return '';
+    if (secs < 60) return 'just now';
+    if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
+    if (secs < 86400) return Math.floor(secs / 3600) + 'h ago';
+    return Math.floor(secs / 86400) + 'd ago';
+  }
+
+  async function loadFeed() {
+    try {
+      const res = await fetch('/api/feed');
+      if (!res.ok) throw new Error('feed unavailable');
+      const { reports } = await res.json();
+      feedList.replaceChildren();
+      if (!reports.length) {
+        const p = document.createElement('p');
+        p.className = 'meta';
+        p.textContent = 'No community reports yet. Be the first to report a suspicious site.';
+        feedList.appendChild(p);
+        return;
+      }
+      for (const r of reports) {
+        const item = document.createElement('div');
+        item.className = 'feed-item';
+        const info = document.createElement('div');
+        info.className = 'info';
+        const url = document.createElement('div');
+        url.className = 'url';
+        url.textContent = r.url; // textContent: report data is untrusted
+        const meta = document.createElement('span');
+        meta.className = 'meta mono';
+        meta.textContent = [r.type, timeAgo(r.created_at), r.source].filter(Boolean).join(' \u00B7 ');
+        info.append(url, meta);
+        const badge = document.createElement('span');
+        badge.className = 'badge badge--suspicious';
+        badge.textContent = 'Reported';
+        item.append(info, badge);
+        feedList.appendChild(item);
+      }
+    } catch {
+      feedList.textContent = 'The threat feed is unavailable. Start the backend with npm start.';
+    }
+  }
+
+  reportForm.addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    reportMsg.className = 'form-error';
+    reportMsg.textContent = '';
+    let url = document.getElementById('report-url').value.trim();
+    if (!url) { reportMsg.textContent = 'Enter the website address to report.'; return; }
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    try {
+      const res = await fetch('/api/feed/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, type: document.getElementById('report-type').value }),
+      });
+      let body = {};
+      try { body = await res.json(); } catch { /* non-JSON */ }
+      if (!res.ok) throw new Error(body.error || 'Report failed.');
+      reportMsg.className = 'form-error form-ok';
+      reportMsg.textContent = 'Thank you. Your report was added.';
+      document.getElementById('report-url').value = '';
+      loadFeed();
+    } catch (err) {
+      reportMsg.textContent = err.message;
+    }
+  });
+
+  loadFeed();
 
   // ---------- Canvas globe (magicui-style reference visual) ----------
   const canvas = document.getElementById('globe');
