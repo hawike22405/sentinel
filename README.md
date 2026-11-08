@@ -9,7 +9,7 @@ Sentinel is an intelligent platform that detects phishing and malicious websites
 - **Certificate validation** — live TLS certificate chain, expiry, and issuer inspection
 - **Collaborative threat intelligence** — community-submitted threat reports with source and timestamp
 - **Risk score & verdict** — 0–100 risk score with Safe / Suspicious / Malicious badge
-- **Animated UI** — dark/light themes, glassmorphism components, custom cursor, hero load entrance, canvas threat globe
+- **Animated UI** — dark/light themes, glassmorphism components, custom cursor, hero load entrance, terminal threat scan animation
 
 ## Tech stack
 
