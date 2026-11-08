@@ -1,0 +1,21 @@
+# Sentinel — documentation index
+
+Sentinel detects phishing and malicious websites through threat analysis, web security assessment, certificate validation, and collaborative threat intelligence.
+
+## Repository documents
+- PRD.md — product requirements: target user, core user flow, acceptance checks, non-goals
+- DESIGN.md — visual design system & tokens (YAML) and anti-slop prose rules
+- AGENTS.md — cross-agent rules: build/test commands, directory structure, component allow-list
+- CLAUDE.md — persistent tool context (imports AGENTS.md)
+- docs/architecture.md — system boundaries, modules, state, integrations
+- docs/code-standards.md — reusable patterns and utilities
+- context/progress.md — session memory: completed slices, active bugs, next steps
+
+## Presentation layer
+- index.html — single-page website: hero, URL scanner, security assessment, certificate validation, threat intelligence feed
+- assets/css/style.css — design tokens + component styles
+- assets/js/app.js — vanilla JS interactions
+
+## Verification
+- scripts/verify-all.mjs — full re-verification (lint + foundation + website)
+- GATES.md — completion ledger with observable gates

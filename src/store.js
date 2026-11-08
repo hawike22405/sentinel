@@ -1,0 +1,73 @@
+import Database from 'better-sqlite3';
+import { join } from 'node:path';
+import { mkdirSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+
+const DATA_DIR = join(process.cwd(), 'data');
+mkdirSync(DATA_DIR, { recursive: true });
+
+const db = new Database(join(DATA_DIR, 'sentinel.db'));
+db.pragma('journal_mode = WAL');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS scans (
+    id TEXT PRIMARY KEY,
+    url TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    verdict TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    details TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS reports (
+    id TEXT PRIMARY KEY,
+    url TEXT NOT NULL,
+    type TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_scans_created_at ON scans(created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_reports_url ON reports(url);
+  CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);
+`);
+
+const insertScan = db.prepare(
+  'INSERT INTO scans (id, url, score, verdict, details) VALUES (?, ?, ?, ?, ?)'
+);
+const getScan = db.prepare('SELECT * FROM scans WHERE id = ?');
+const insertReport = db.prepare(
+  'INSERT INTO reports (id, url, type, source) VALUES (?, ?, ?, ?)'
+);
+const getReports = db.prepare(
+  'SELECT * FROM reports ORDER BY created_at DESC LIMIT ?'
+);
+
+export function createScan({ id, url, score, verdict, details }) {
+  insertScan.run(id, url, score, verdict, JSON.stringify(details));
+}
+
+export function getScanById(id) {
+  const row = getScan.get(id);
+  if (!row) return null;
+  return {
+    id: row.id,
+    url: row.url,
+    score: row.score,
+    verdict: row.verdict,
+    created_at: row.created_at,
+    details: JSON.parse(row.details || '{}'),
+  };
+}
+
+export function createReport({ id, url, type, source }) {
+  insertReport.run(id, url, type, source);
+}
+
+export function listReports(limit = 50) {
+  return getReports.all(limit);
+}
+
+export function closeStore() {
+  db.close();
+}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" class="is-loading">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sentinel &mdash; Verify links before you click</title>
+  <meta name="description" content="Sentinel detects phishing and malicious websites through threat analysis, web security assessment, certificate validation, and collaborative threat intelligence.">
+  <meta name="theme-color" content="#0b1120">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="is-loading">
+
+  <div id="page-preload" class="page-preload">
+    <div class="loader-mark" aria-hidden="true"></div>
+  </div>
+
+  <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+  <div class="cursor-outline" id="cursor-outline" aria-hidden="true"></div>
+
+  <nav class="nav">
+    <div class="wrap">
+      <a href="#" class="brand" aria-label="Sentinel home">
+        <span class="mark">S</span>
+        Sentinel
+      </a>
+      <div class="nav-actions">
+        <button class="theme-toggle ghost" id="theme-toggle" aria-pressed="false">
+          <span id="theme-icon">\u263E</span>
+        </button>
+        <a href="#scan" class="btn btn--accent">Scan a link</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="top">
+    <section class="hero" id="hero" aria-labelledby="hero-h">
+      <div class="container split">
+        <div class="text-first">
+          <div class="kicker">Threat analysis &bull; Web security &bull; Certificate validation &bull; Threat intelligence</div>
+          <h1 id="hero-h">Verify links before you click.</h1>
+          <p class="tagline">Sentinel checks reputation, page security, TLS certificates, and community reports in one scan &mdash; then gives you a plain-language verdict.</p>
+          <form id="scan-form" class="input-group" novalidate>
+            <label for="url-input" class="sr-only">Website URL</label>
+            <input
+              id="url-input"
+              class="input"
+              type="url"
+              placeholder="https://example.com/login"
+              aria-label="Website URL"
+              required
+            >
+            <button type="submit" class="btn btn--accent" id="scan-btn">Scan link</button>
+          </form>
+          <div id="form-error" class="form-error" role="alert" aria-live="polite"></div>
+        </div>
+        <div class="visual">
+          <div class="globe-wrap globe-visual">
+            <canvas id="globe" width="420" height="340" aria-hidden="true"></canvas>
+            <div class="globe-caption">Live global threat intelligence</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section pillars" id="how-it-works" aria-labelledby="pillars-h">
+      <div class="container">
+        <h2 id="pillars-h">Four checks in one scan</h2>
+        <div class="grid grid--cols-3">
+          <article class="card-glass">
+            <div class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+            </div>
+            <h3>Threat analysis</h3>
+            <p>Known-bad lists, reputation signals, and suspicious patterns such as look-alike domains and credential-harvesting keywords.</p>
+          </article>
+          <article class="card-glass">
+            <div class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
+            </div>
+            <h3>Web security</h3>
+            <p>HTTP security headers, exposed services, and software freshness &mdash; weak configurations raise the risk score.</p>
+          </article>
+          <article class="card-glass">
+            <div class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
+            </div>
+            <h3>Certificate validation</h3>
+            <p>TLS chain, expiry, transparency logs, and cryptographic strength. Weak certificates undermine the trust indicator.</p>
+          </article>
+          <article class="card-glass">
+            <div class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M20 7H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14v-2"/><path d="M13 13V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7"/></svg>
+            </div>
+            <h3>Threat intelligence</h3>
+            <p>Community-reported threats with source and date, so newly spotted phishing pages are flagged faster than any single list.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--short" id="scan" aria-labelledby="scan-h">
+      <div class="container result-wrap">
+        <div class="result-card">
+          <div class="gauge-wrap">
+            <div class="gauge" id="gauge"></div>
+            <div class="gauge-needle" id="gauge-needle"></div>
+            <div class="gauge-label" id="gauge-score">--</div>
+          </div>
+          <div class="gauge-legend" id="gauge-legend">
+            <span><span class="gauge-dot" style="background: var(--color-success)"></span> Safe</span>
+            <span><span class="gauge-dot" style="background: var(--color-warning)"></span> Suspicious</span>
+            <span><span class="gauge-dot" style="background: var(--color-danger)"></span> Malicious</span>
+          </div>
+        </div>
+        <div class="card-glass checks-panel">
+          <h2>Scan result</h2>
+          <p>Enter a URL above to run a live (simulated) scan and see the verdict.</p>
+          <div class="check check--ok" id="check-reputation">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+            <div class="text"><strong>Reputation</strong> <span>No known-bad listings found.</span></div>
+          </div>
+          <div class="check check--warn" id="check-headers">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2"/></svg>
+            <div class="text"><strong>Security headers</strong> <span>Missing strict-transport-security.</span></div>
+          </div>
+          <div class="check check--bad" id="check-certificate">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><path d="M12 16h.01"/></svg>
+            <div class="text"><strong>Certificate</strong> <span>Chain incomplete; self-signed intermediate.</span></div>
+          </div>
+          <div class="check check--bad" id="check-threat-intel">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14v-2"/><path d="M13 13V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7"/></svg>
+            <div class="text"><strong>Threat intelligence</strong> <span>1 community report in the last 24 hours.</span></div>
+          </div>
+          <div class="cert-panel mt-6">
+            <h3>Certificate details</h3>
+            <div class="field"><span class="key">Issuer</span><span class="val mono">Let's Encrypt R3 (simulated)</span></div>
+            <div class="field"><span class="key">Expires</span><span class="val mono">2027-01-15</span></div>
+            <div class="field"><span class="key">Chain</span><span class="val mono" style="color: var(--color-warning);">Incomplete</span></div>
+            <div class="field"><span class="key">Transparency log</span><span class="val mono">Present</span></div>
+            <div class="field"><span class="key">Fingerprint (SHA-256)</span><span class="val mono">a4&hellip;1f</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--short" id="threat-feed" aria-labelledby="feed-h">
+      <div class="container">
+        <h2 id="feed-h">Threat feed</h2>
+        <p>Recently reported threats from the collaborative intelligence network.</p>
+        <div class="feed">
+          <div class="feed-item">
+            <div class="info">
+              <div class="url">urgent-payroll-login.vercel-app.net</div>
+              <span class="meta mono">Phishing &middot; 14m ago &middot; user-report</span>
+            </div>
+            <span class="badge badge--malicious">Malicious</span>
+          </div>
+          <div class="feed-item">
+            <div class="info">
+              <div class="url">secure-verify-account-services.com</div>
+              <span class="meta mono">Suspicious &middot; 2h ago &middot; feed-alpha</span>
+            </div>
+            <span class="badge badge--suspicious">Suspicious</span>
+          </div>
+          <div class="feed-item">
+            <div class="info">
+              <div class="url">microsoft-support-alert.net</div>
+              <span class="meta mono">Malicious &middot; 5h ago &middot; user-report</span>
+            </div>
+            <span class="badge badge--malicious">Malicious</span>
+          </div>
+          <div class="feed-item">
+            <div class="info">
+              <div class="url">paypal-dispute-resolution.xyz</div>
+              <span class="meta mono">Malicious &middot; 1d ago &middot; feed-beta</span>
+            </div>
+            <span class="badge badge--malicious">Malicious</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <a href="#" class="brand" aria-label="Sentinel">
+        <span class="mark">S</span>
+        Sentinel
+      </a>
+      <p>&copy; 2026 Sentinel. Presentation layer only &mdash; no live scanning, no user data stored. See PRD.md for scope.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
