@@ -238,7 +238,7 @@ function validateCertificate(url) {
 
 function scoreToVerdict(score) {
   if (score <= 33) return 'safe';
-  if (score <= 66) return 'suspicious';
+  if (score <= 59) return 'suspicious';
   return 'malicious';
 }
 
