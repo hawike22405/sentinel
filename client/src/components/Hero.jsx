@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { mountRibbon } from '../ribbon.js';
 import CurvedInput from './CurvedInput';
+import GlassSurface from './GlassSurface';
 
 const HARVEST_KEYWORDS = [
   'login', 'verify', 'secure', 'account', 'paypal', 'bank',
@@ -126,6 +127,9 @@ export default function Hero({ onScanComplete }) {
           <div id="form-error" className="form-error" role="alert" aria-live="polite">
             {formError}
           </div>
+        </div>
+        <div className="visual">
+          <GlassSurface width={560} height={300} borderRadius={16} />
         </div>
       </div>
     </section>

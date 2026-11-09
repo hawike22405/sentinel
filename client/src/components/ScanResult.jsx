@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import GlassSurface from './GlassSurface';
 
 const badgeMap = {
   safe: 'badge--safe',
@@ -147,7 +148,7 @@ export default function ScanResult({ result }) {
             </span>
           </div>
         </div>
-        <div className="card-glass checks-panel">
+        <GlassSurface width={560} height={240} borderRadius={16}>
           <h2>
             Scan result{' '}
             <span id="result-verdict" ref={verdictRef} className="badge badge--safe">
@@ -197,11 +198,15 @@ export default function ScanResult({ result }) {
             <h3>Certificate details</h3>
             <div className="field">
               <span className="key">Issuer</span>
-              <span className="val mono" id="cert-issuer">—</span>
+              <span className="val mono" id="cert-issuer">
+                Not scanned
+              </span>
             </div>
             <div className="field">
               <span className="key">Expires</span>
-              <span className="val mono" id="cert-expires">—</span>
+              <span className="val mono" id="cert-expires">
+                Not scanned
+              </span>
             </div>
             <div className="field">
               <span className="key">Chain</span>
@@ -213,10 +218,12 @@ export default function ScanResult({ result }) {
             </div>
             <div className="field">
               <span className="key">Fingerprint (SHA-256)</span>
-              <span className="val mono cert-fp" id="cert-fingerprint">—</span>
+              <span className="val mono cert-fp" id="cert-fingerprint">
+                a4&hellip;1f
+              </span>
             </div>
           </div>
-        </div>
+        </GlassSurface>
       </div>
     </section>
   );
@@ -252,7 +259,7 @@ export default function ScanResult({ result }) {
             </span>
           </div>
         </div>
-        <div className="card-glass checks-panel">
+        <GlassSurface width={560} height={240} borderRadius={16}>
           <h2>
             Scan result{' '}
             <span id="result-verdict" ref={verdictRef} className={`badge ${badge}`}>
@@ -331,7 +338,7 @@ export default function ScanResult({ result }) {
               </span>
             </div>
           </div>
-        </div>
+        </GlassSurface>
       </div>
     </section>
   );
