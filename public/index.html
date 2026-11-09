@@ -10,6 +10,15 @@
     <link rel="stylesheet" crossorigin href="/assets/index-y6oNtv7d.css">
   </head>
   <body>
+    <div id="ribbon" style="height:150px"></div>
+    <div id="checks" style="width:100vw;height:70vh;margin-left:calc(50% - 50vw)"></div>
     <div id="root"></div>
+    <script type="module">
+      import { mountRibbon } from './assets/js/ribbon.js';
+      import { mountChecksCarousel } from './assets/js/checks-carousel.js';
+      mountRibbon(document.getElementById('ribbon'),
+        ['Threat intelligence', 'Threat analysis', 'Web security', 'Certificate validation']);
+      mountChecksCarousel(document.getElementById('checks'));
+    </script>
   </body>
 </html>
