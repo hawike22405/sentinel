@@ -30,6 +30,12 @@
   - Builds to public/ (served by Express)
   - `npm run build` (in client/) builds the React frontend
 
+- **CurvedInput (React Bits) integration fixed**:
+  - Root causes: Hero.jsx looked up `#scan-btn` (not present in the new component, so submit threw), `type="url"` triggered native browser validation (blocked inputs like `example.com`), and the component was a flat approximation instead of the curved React Bits layout
+  - client/src/components/CurvedInput.jsx rewritten: SVG arc surface, text/caret/icon/button label drawn along the curve, transparent native `<input>` for typing, `noValidate` form, responsive via ResizeObserver, theme via CSS tokens (follows the dark/light toggle)
+  - Hero.jsx: removed DOM manipulation, uses `disabled` + `buttonText` while scanning
+  - Styles live in client/src/App.css under `/* Curved Input */`; public/ rebuilt
+
 ## Active bugs
 - None.
 

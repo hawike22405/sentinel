@@ -62,6 +62,7 @@ export default function Hero({ onScanComplete }) {
   const [isScanning, setIsScanning] = useState(false);
 
   const handleSubmit = async (url) => {
+    if (isScanning) return;
     setFormError('');
     const raw = url.trim();
     if (!raw) {
@@ -77,10 +78,6 @@ export default function Hero({ onScanComplete }) {
       return;
     }
 
-    const btn = document.getElementById('scan-btn');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Scanning\u2026';
     setIsScanning(true);
 
     try {
@@ -98,8 +95,6 @@ export default function Hero({ onScanComplete }) {
     } catch (err) {
       setFormError(err.message || 'Scan failed. Please try again.');
     } finally {
-      btn.disabled = false;
-      btn.textContent = originalText;
       setIsScanning(false);
     }
   };
@@ -133,12 +128,12 @@ export default function Hero({ onScanComplete }) {
           <div className="input-group">
             <CurvedInput
               placeholder="https://example.com/login"
-              buttonText="Scan link"
-              theme="dark"
-              bend={28}
-              height={64}
+              buttonText={isScanning ? 'Scanning\u2026' : 'Scan link'}
+              bend={18}
+              height={60}
               width={560}
               onSubmit={handleSubmit}
+              disabled={isScanning}
               type="url"
               showButton
               showIcon

@@ -1071,34 +1071,144 @@ html:not(.is-loading) .hero .scan {
 
 /* Curved Input */
 .curved-input-wrapper {
+  position: relative;
   width: 100%;
-  max-width: 560px;
-  margin: 0 auto 0;
+  margin: 0;
 }
 
 .curved-input-svg {
+  position: absolute;
+  inset: 0;
   overflow: visible;
+  display: block;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.28));
+  pointer-events: none;
+}
+
+.curved-input-svg .ci-border {
+  fill: var(--color-glass-border);
+  transition: fill 0.2s ease;
+}
+
+.curved-input-svg .ci-surface {
+  fill: var(--color-glass-bg);
+}
+
+.curved-input-svg .ci-button-fill {
+  fill: var(--color-accent);
+  transition: opacity 0.2s ease;
+}
+
+.curved-input-svg .ci-icon path {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.curved-input-svg .ci-text,
+.curved-input-svg .ci-placeholder,
+.curved-input-svg .ci-button-text {
+  font-family: var(--font-body);
+}
+
+.curved-input-svg .ci-text {
+  fill: var(--color-text);
+}
+
+.curved-input-svg .ci-placeholder {
+  fill: var(--color-text-muted);
+}
+
+.curved-input-svg .ci-button-text {
+  fill: var(--color-accent-text);
+  font-weight: 600;
+}
+
+.curved-input-svg .ci-caret {
+  fill: var(--color-accent);
+  opacity: 0;
+}
+
+.curved-input-wrapper:focus-within .ci-border {
+  fill: var(--color-border-focus);
+}
+
+.curved-input-wrapper:focus-within .ci-caret {
+  opacity: 1;
+  animation: curved-input-blink 1.1s steps(1) infinite;
+}
+
+.curved-input-wrapper:has(.curved-input-button:hover:not(:disabled)) .ci-button-fill {
+  opacity: 0.86;
+}
+
+.curved-input-wrapper.is-disabled .curved-input-svg {
+  opacity: 0.6;
+}
+
+.curved-input-form {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+}
+
+/* Transparent input: captures typing, focus, paste and IME; the SVG draws the text. */
+.curved-input-field {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px; /* prevents iOS zoom on focus */
+  opacity: 0;
+  cursor: text;
+  outline: none;
 }
 
 .curved-input-button {
-  background: var(--color-accent);
-  color: var(--color-accent-text);
-  border: none;
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  padding: 0 24px;
-  font-size: 14px;
-  font-weight: 600;
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   cursor: pointer;
-  transition: background 0.2s ease;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
 }
 
-.curved-input-button:hover {
-  background: #70d6f7;
+.curved-input-button:disabled {
+  cursor: not-allowed;
 }
 
-/* Update hero input group to use curved input */
+.curved-input-button:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: -4px;
+}
+
+@keyframes curved-input-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .curved-input-wrapper:focus-within .ci-caret {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Hero: the curved input fills the form column */
 .hero .input-group {
+  display: block;
   width: 100%;
-  max-width: none;
-  gap: 0;
+  max-width: 560px;
 }
