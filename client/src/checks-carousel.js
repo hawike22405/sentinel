@@ -1,6 +1,6 @@
 // "Four checks in one scan" as a FlexCarousel (vanilla port of the React Bits component, 'liquid' preset).
 // Fills its container; the container should be full-width. Resizes automatically.
-import { Renderer, Program, Mesh, Triangle, Plane, Texture, RenderTarget } from 'https://cdn.jsdelivr.net/npm/ogl@1.0.11/src/index.js';
+import { Renderer, Program, Mesh, Triangle, Plane, Texture, RenderTarget } from 'ogl';
 
 const CARDS = [
   { n: '01', title: 'Certificate validation', lines: ['TLS chain, expiry, transparency logs,', 'and cryptographic strength. Weak', 'certificates undermine the trust', 'indicator.'] },

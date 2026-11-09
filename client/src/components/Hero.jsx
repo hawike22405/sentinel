@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { mountRibbon } from '../ribbon.js';
+import CurvedInput from './CurvedInput';
 
 const HARVEST_KEYWORDS = [
   'login', 'verify', 'secure', 'account', 'paypal', 'bank',
@@ -83,10 +84,6 @@ export default function Hero({ onScanComplete }) {
       return;
     }
 
-    const btn = document.getElementById('scan-btn');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Scanning\u2026';
     setIsScanning(true);
 
     try {
@@ -104,8 +101,6 @@ export default function Hero({ onScanComplete }) {
     } catch (err) {
       setFormError(err.message || 'Scan failed. Please try again.');
     } finally {
-      btn.disabled = false;
-      btn.textContent = originalText;
       setIsScanning(false);
     }
   };
@@ -121,21 +116,13 @@ export default function Hero({ onScanComplete }) {
             community reports in one scan &mdash; then gives you a plain-language
             verdict.
           </p>
-          <form id="scan-form" className="input-group" novalidate onSubmit={handleSubmit}>
-            <label htmlFor="url-input" className="sr-only">Website URL</label>
-            <input
-              id="url-input"
-              className="input"
-              type="url"
+          <CurvedInput
               placeholder="https://example.com/login"
-              aria-label="Website URL"
-              required
+              buttonText={isScanning ? 'Scanning\u2026' : 'Scan link'}
+              onSubmit={handleSubmit}
               disabled={isScanning}
+              ariaLabel="Website URL"
             />
-            <button type="submit" className="btn btn--accent" id="scan-btn" disabled={isScanning}>
-              {isScanning ? 'Scanning\u2026' : 'Scan link'}
-            </button>
-          </form>
           <div id="form-error" className="form-error" role="alert" aria-live="polite">
             {formError}
           </div>
