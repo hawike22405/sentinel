@@ -360,25 +360,35 @@ html:not(.m-cursor) .cursor-outline {
 /* Typography */
 h1,
 h2,
-h3 {
-  font-family: var(--font-body);
+h3,
+h4,
+h5,
+h6,
+.heading-display,
+.title-display,
+.big-text {
+  font-family: var(--font-display);
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.2;
   margin: 0 0 18px 0;
   color: var(--color-text);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.01em;
 }
 
 h1 {
-  font-size: 44px;
+  font-size: clamp(38px, 6vw, 56px);
 }
 
 h2 {
-  font-size: 30px;
+  font-size: clamp(28px, 4vw, 38px);
 }
 
 h3 {
-  font-size: 20px;
+  font-size: clamp(22px, 3vw, 28px);
+}
+
+h4 {
+  font-size: clamp(18px, 2.5vw, 24px);
 }
 
 p {
@@ -604,7 +614,7 @@ html:not(.is-loading) .hero .scan {
 
 .card-glass h3 {
   margin-bottom: 10px;
-  font-size: 19px;
+  font-size: 24px;
 }
 
 .card-glass p {

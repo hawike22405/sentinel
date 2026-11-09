@@ -16,8 +16,8 @@ const cardSvg = c => {
 <rect width="${CW}" height="${CH}" rx="28" fill="#0c0d10"/><rect x="1" y="1" width="${CW - 2}" height="${CH - 2}" rx="27" fill="none" stroke="#ffffff" stroke-opacity=".1" stroke-width="2"/>
 <rect x="48" y="44" width="64" height="64" rx="16" fill="#15161a" stroke="#ffffff" stroke-opacity=".1"/>
 <circle cx="80" cy="76" r="14" fill="none" stroke="#fff" stroke-width="2.5"/><path d="M73 76l5 5 9-10" fill="none" stroke="#fff" stroke-width="2.5"/>
-<text x="${CW - 48}" y="88" text-anchor="end" fill="#6366f1" font-size="30" font-weight="700">${c.n}</text>
-<text x="48" y="160" fill="#fff" font-size="34" font-weight="700">${c.title}</text>${body}</svg>`;
+<text x="${CW - 48}" y="88" text-anchor="end" fill="#6366f1" font-size="30" font-weight="700" font-family="'Great Day', Inter, Segoe UI, Arial, sans-serif">${c.n}</text>
+<text x="48" y="160" fill="#fff" font-size="36" font-weight="700" font-family="'Great Day', Inter, Segoe UI, Arial, sans-serif">${c.title}</text>${body}</svg>`;
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 };
 
