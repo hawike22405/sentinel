@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import RingsIntro from './components/RingsIntro';
 import ThemeToggle from './components/ThemeToggle';
 import CustomCursor from './components/CustomCursor';
 import PageBackground from './components/PageBackground';
@@ -15,28 +16,19 @@ export default function App() {
     const html = document.documentElement;
     html.classList.add('is-loading');
     document.body.classList.add('is-loading');
+  }, []);
 
-    const preload = document.getElementById('page-preload');
-    const finishLoad = () => {
-      if (preload) {
-        preload.classList.add('fade-out');
-        setTimeout(() => preload.remove(), 600);
-      }
-      html.classList.remove('is-loading');
-      document.body.classList.remove('is-loading');
-      const finePointer = window.matchMedia('(pointer: fine)').matches;
-      if (finePointer) html.classList.add('m-cursor');
-    };
-
-    const timer = setTimeout(finishLoad, 700);
-    return () => clearTimeout(timer);
+  const finishLoad = useCallback(() => {
+    const html = document.documentElement;
+    html.classList.remove('is-loading');
+    document.body.classList.remove('is-loading');
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
+    if (finePointer) html.classList.add('m-cursor');
   }, []);
 
   return (
     <>
-      <div id="page-preload" className="page-preload">
-        <div className="loader-mark" aria-hidden="true" />
-      </div>
+      <RingsIntro onFinish={finishLoad} />
       <div className="cursor-dot" id="cursor-dot" aria-hidden="true" />
       <div className="cursor-outline" id="cursor-outline" aria-hidden="true" />
       <CustomCursor />
