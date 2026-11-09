@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
-import TextLoop from './TextLoop';
-import CurvedInput from './CurvedInput';
+import { useEffect, useRef, useState } from 'react';
+import { mountRibbon } from '../ribbon.js';
 
 const HARVEST_KEYWORDS = [
   'login', 'verify', 'secure', 'account', 'paypal', 'bank',
@@ -60,9 +59,15 @@ function computeScore(url) {
 export default function Hero({ onScanComplete }) {
   const [formError, setFormError] = useState('');
   const [isScanning, setIsScanning] = useState(false);
+  const ribbonRef = useRef(null);
+
+  useEffect(() => {
+    const unmount = mountRibbon(ribbonRef.current,
+      ['Threat analysis', 'Web security', 'Certificate validation', 'Threat intelligence']);
+    return unmount;
+  }, []);
 
   const handleSubmit = async (url) => {
-    if (isScanning) return;
     setFormError('');
     const raw = url.trim();
     if (!raw) {
@@ -78,6 +83,10 @@ export default function Hero({ onScanComplete }) {
       return;
     }
 
+    const btn = document.getElementById('scan-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Scanning\u2026';
     setIsScanning(true);
 
     try {
@@ -95,50 +104,38 @@ export default function Hero({ onScanComplete }) {
     } catch (err) {
       setFormError(err.message || 'Scan failed. Please try again.');
     } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
       setIsScanning(false);
     }
   };
 
   return (
     <section className="hero" id="hero" aria-labelledby="hero-h">
+      <div className="wave-ribbon" ref={ribbonRef} style={{ height: 150 }} aria-hidden="true" />
       <div className="container split">
         <div className="text-first">
-          <div className="kicker wave-ribbon">
-            <TextLoop
-              text="THREAT ANALYSIS • WEB SECURITY • CERTIFICATE VALIDATION • THREAT INTELLIGENCE"
-              shape="wave"
-              speed={50}
-              curviness={25}
-              fontSize={16}
-              fontWeight={600}
-              letterSpacing={2}
-              uppercase
-              ribbon
-              ribbonColor="#6366f1"
-              ribbonWidth={20}
-              pauseOnHover
-            />
-          </div>
           <h1 id="hero-h">Verify links before you click.</h1>
           <p className="tagline">
             Sentinel checks reputation, page security, TLS certificates, and
             community reports in one scan &mdash; then gives you a plain-language
             verdict.
           </p>
-          <div className="input-group">
-            <CurvedInput
-              placeholder="https://example.com/login"
-              buttonText={isScanning ? 'Scanning\u2026' : 'Scan link'}
-              bend={18}
-              height={60}
-              width={560}
-              onSubmit={handleSubmit}
-              disabled={isScanning}
+          <form id="scan-form" className="input-group" novalidate onSubmit={handleSubmit}>
+            <label htmlFor="url-input" className="sr-only">Website URL</label>
+            <input
+              id="url-input"
+              className="input"
               type="url"
-              showButton
-              showIcon
+              placeholder="https://example.com/login"
+              aria-label="Website URL"
+              required
+              disabled={isScanning}
             />
-          </div>
+            <button type="submit" className="btn btn--accent" id="scan-btn" disabled={isScanning}>
+              {isScanning ? 'Scanning\u2026' : 'Scan link'}
+            </button>
+          </form>
           <div id="form-error" className="form-error" role="alert" aria-live="polite">
             {formError}
           </div>

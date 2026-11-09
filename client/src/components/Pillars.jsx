@@ -1,3 +1,6 @@
+import { useEffect, useRef } from 'react';
+import { mountChecksCarousel } from '../checks-carousel.js';
+
 const pillars = [
   {
     icon: (
@@ -42,23 +45,22 @@ const pillars = [
 ];
 
 export default function Pillars() {
+  const carouselRef = useRef(null);
+  useEffect(() => mountChecksCarousel(carouselRef.current), []);
+
   return (
     <section className="section pillars" id="how-it-works" aria-labelledby="pillars-h">
       <div className="container">
         <h2 id="pillars-h">Four checks in one scan</h2>
-        <div className="grid grid--cols-3">
-          {pillars.map((p, i) => (
-            <article key={i} className="card-glass">
-              <div className="icon-wrap" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  {p.icon}
-                </svg>
-              </div>
-              <h3>{p.title}</h3>
-              <p dangerouslySetInnerHTML={{ __html: p.desc }} />
-            </article>
+        <div ref={carouselRef}
+             style={{ width: '100vw', height: '70vh', marginLeft: 'calc(50% - 50vw)' }} />
+        <ul className="sr-only">
+          {pillars.map(p => (
+            <li key={p.title}>
+              <strong>{p.title}</strong>: <span dangerouslySetInnerHTML={{ __html: p.desc }} />
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );
