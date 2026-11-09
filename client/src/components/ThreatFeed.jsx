@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import GlassSurface from './GlassSurface';
 
 function timeAgo(iso) {
   const secs = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
@@ -84,7 +83,7 @@ export default function ThreatFeed() {
             <p className="meta">No community reports yet. Be the first to report a suspicious site.</p>
           )}
           {!loading && !error && reports.map((r) => (
-            <GlassSurface key={r.id} width={560} height={72} borderRadius={12}>
+            <div key={r.id} className="feed-item">
               <div className="info">
                 <div className="url">{r.url}</div>
                 <span className="meta mono">
@@ -92,7 +91,7 @@ export default function ThreatFeed() {
                 </span>
               </div>
               <span className={`badge ${badgeMap[r.verdict] || 'badge--suspicious'}`}>Reported</span>
-            </GlassSurface>
+            </div>
           ))}
         </div>
         <form id="report-form" className="input-group report-form" novalidate onSubmit={handleSubmit}>
