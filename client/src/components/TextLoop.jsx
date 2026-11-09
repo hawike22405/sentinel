@@ -18,7 +18,7 @@ const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 const smootherstep = (t) => t * t * t * (t * (t * 6 - 15) + 10);
-const clamp = (v, min, max) => Math.min(max, Math.min(min, v));
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const wrap = (v, length) => ((v % length) + length) % length;
 
 const circleRadius = (curviness, ribbonWidth) =>

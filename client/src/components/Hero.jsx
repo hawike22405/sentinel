@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { mountRibbon } from '../ribbon.js';
+import { useState } from 'react';
+import TextLoop from './TextLoop';
 import CurvedInput from './CurvedInput';
 
 const HARVEST_KEYWORDS = [
@@ -60,13 +60,6 @@ function computeScore(url) {
 export default function Hero({ onScanComplete }) {
   const [formError, setFormError] = useState('');
   const [isScanning, setIsScanning] = useState(false);
-  const ribbonRef = useRef(null);
-
-  useEffect(() => {
-    const unmount = mountRibbon(ribbonRef.current,
-      ['Threat analysis', 'Web security', 'Certificate validation', 'Threat intelligence']);
-    return unmount;
-  }, []);
 
   const handleSubmit = async (url) => {
     setFormError('');
@@ -107,7 +100,24 @@ export default function Hero({ onScanComplete }) {
 
   return (
     <section className="hero" id="hero" aria-labelledby="hero-h">
-      <div className="wave-ribbon" ref={ribbonRef} style={{ height: 150 }} aria-hidden="true" />
+      <div className="wave-ribbon" aria-hidden="true">
+        <TextLoop
+          text="Threat analysis ✦ Web security ✦ Certificate validation ✦ Threat intelligence"
+          shape="line"
+          speed={90}
+          direction="forward"
+          separator="✦"
+          fontSize={26}
+          fontWeight={800}
+          letterSpacing={2}
+          uppercase
+          ribbon
+          ribbonColor="#6366f1"
+          ribbonWidth={58}
+          pauseOnHover
+          draggable
+        />
+      </div>
       <div className="container split">
         <div className="text-first">
           <h1 id="hero-h">Verify links before you click.</h1>
