@@ -102,7 +102,15 @@ export default function Hero({ onScanComplete }) {
       if (!res.ok) {
         throw new Error(body.error || 'Scan failed.');
       }
-      if (onScanComplete) onScanComplete(body);
+      if (onScanComplete) {
+        onScanComplete(body);
+        setTimeout(() => {
+          const scanSection = document.getElementById('scan');
+          if (scanSection) {
+            scanSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 120);
+      }
     } catch (err) {
       setFormError(err.message || 'Scan failed. Please try again.');
     } finally {

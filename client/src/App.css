@@ -313,6 +313,10 @@ html:not(.m-cursor) .cursor-outline {
   padding: 64px 0;
 }
 
+#scan {
+  scroll-margin-top: calc(var(--nav-height, 72px) + 20px);
+}
+
 .container {
   width: 100%;
   max-width: var(--max-width);

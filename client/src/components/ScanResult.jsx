@@ -122,6 +122,14 @@ export default function ScanResult({ result }) {
       set('cert-chain', checks.certificate.info.chain);
       set('cert-fingerprint', checks.certificate.info.fingerprint);
     }
+
+    const scrollTimer = setTimeout(() => {
+      const scanSection = document.getElementById('scan');
+      if (scanSection) {
+        scanSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 120);
+    return () => clearTimeout(scrollTimer);
   }, [result]);
 
   const emptyState = (
