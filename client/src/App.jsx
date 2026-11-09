@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import RingsIntro from './components/RingsIntro';
 import ThemeToggle from './components/ThemeToggle';
-import CustomCursor from './components/CustomCursor';
+import CanvasCursor from './components/CanvasCursor';
 import PageBackground from './components/PageBackground';
 import Hero from './components/Hero';
 import Pillars from './components/Pillars';
@@ -29,9 +29,7 @@ export default function App() {
   return (
     <>
       <RingsIntro onFinish={finishLoad} />
-      <div className="cursor-dot" id="cursor-dot" aria-hidden="true" />
-      <div className="cursor-outline" id="cursor-outline" aria-hidden="true" />
-      <CustomCursor />
+      <CanvasCursor />
       <PageBackground />
       <nav className="nav">
         <div className="wrap">
