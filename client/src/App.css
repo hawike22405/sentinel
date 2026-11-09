@@ -21,15 +21,6 @@
 
   --font-body: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  --font-rubiks: "RubiksCube", var(--font-body);
-}
-
-@font-face {
-  font-family: "RubiksCube";
-  src: url("./assets/fonts/RubiksCube-BPKV.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
 }
 
 :root {
@@ -412,7 +403,6 @@ p {
 }
 
 .hero h1 {
-  font-family: var(--font-rubiks);
   font-size: 48px;
   margin-bottom: 16px;
 }
@@ -892,7 +882,7 @@ html:not(.is-loading) .hero .scan {
 }
 
 .wave-text {
-  font-family: var(--font-rubiks);
+  font-family: var(--font-mono);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 2px;
