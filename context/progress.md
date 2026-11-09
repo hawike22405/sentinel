@@ -36,6 +36,14 @@
   - Hero.jsx: removed DOM manipulation, uses `disabled` + `buttonText` while scanning
   - Styles live in client/src/App.css under `/* Curved Input */`; public/ rebuilt
 
+- **Lightfall (React Bits) added as the page background**:
+  - client/src/components/Lightfall.jsx + Lightfall.css (vendored React Bits JS+CSS variant, `'use client'` directive dropped since this is a Vite SPA)
+  - client/src/components/PageBackground.jsx: resolves `--color-accent` / `--color-text` at runtime (Lightfall needs color strings), watches `data-theme` so the dark/light toggle updates the effect live; dark = additive light, light = `lightMode`
+  - App.jsx mounts it before the nav; App.css `.page-bg` (fixed, z-index 0, pointer-events none) and `main, .footer { position: relative; z-index: 1 }`
+  - Settings: opacity 0.5 dark / 0.4 light for text legibility, `holdToWarp` off so pressing the scan input never triggers warp, dpr capped at 1.5
+  - AGENTS.md and DESIGN.md allow-lists updated to include it
+  - Falls back to the plain themed background when WebGL2 is unavailable; honors prefers-reduced-motion (static frame)
+
 ## Active bugs
 - None.
 

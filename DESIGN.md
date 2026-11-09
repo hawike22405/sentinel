@@ -57,11 +57,12 @@ Nav: fixed 72px, translucent with blur.
 
 ## Components (allow-list per AGENTS.md)
 - btn (glass outline + accent filled), card-glass, input (glass), theme-toggle, badge (verdict chips), gauge (radial + needle), canvas globe.
+- Lightfall page background: fixed full-viewport WebGL light-streak effect behind all content (`client/src/components/PageBackground.jsx`). Streak colors come from `--color-text` and `--color-accent`; dark theme uses additive light, light theme uses `lightMode` with the accent only. Kept at 0.4-0.5 opacity so body text stays legible; mouse lens enabled, hold-to-warp disabled so it never fights the scan input.
 
 ## Prose rules (no AI slop)
 - No purple/violet gradients, acid-green neon, blobs, soft grey shadows, magnetic buttons, tilting cards.
 - No ALL-CAPS labels, middle-dot meta strings, `→` on links. Sentence case throughout.
 - No lorem ipsum, tiny fake body copy, invented metrics dashboards.
-- Scroll-reveal fades on every section are prohibited; motion is limited to the hero load entrance, cursor, hover/press, and the canvas globe.
+- Scroll-reveal fades on every section are prohibited; motion is limited to the hero load entrance, cursor, hover/press, the canvas globe, and the Lightfall background.
 - Mockups are identity applications (browser chrome, URL bar, certificate card, threat chip), not fake dashboards full of invented metrics.
 - Very little text: brand name, one tagline, section labels, short UI chips, one command.

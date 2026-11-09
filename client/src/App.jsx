@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import ThemeToggle from './components/ThemeToggle';
 import CustomCursor from './components/CustomCursor';
+import PageBackground from './components/PageBackground';
 import Hero from './components/Hero';
 import Pillars from './components/Pillars';
 import ScanResult from './components/ScanResult';
@@ -39,6 +40,7 @@ export default function App() {
       <div className="cursor-dot" id="cursor-dot" aria-hidden="true" />
       <div className="cursor-outline" id="cursor-outline" aria-hidden="true" />
       <CustomCursor />
+      <PageBackground />
       <nav className="nav">
         <div className="wrap">
           <a href="#" className="brand" aria-label="Sentinel home">
