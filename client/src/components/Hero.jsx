@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import TextLoop from './TextLoop';
+import TerminalAnimation from './TerminalAnimation';
 
 const HARVEST_KEYWORDS = [
   'login', 'verify', 'secure', 'account', 'paypal', 'bank',
@@ -152,7 +153,9 @@ export default function Hero({ onScanComplete }) {
             {formError}
           </div>
         </div>
-        <div className="visual" />
+        <div className="visual">
+          <TerminalAnimation />
+        </div>
       </div>
     </section>
   );
