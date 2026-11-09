@@ -1,0 +1,161 @@
+import { useEffect, useRef, useState } from 'react';
+import TextLoop from './TextLoop';
+
+const HARVEST_KEYWORDS = [
+  'login', 'verify', 'secure', 'account', 'paypal', 'bank',
+  'update', 'signin', 'webscr', 'confirm',
+];
+
+function computeScore(url) {
+  let score = 0;
+  const reasons = [];
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname;
+    const protocol = parsed.protocol;
+
+    if (protocol !== 'https:') {
+      score += 30;
+      reasons.push('Insecure protocol (HTTP)');
+    }
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+      score += 25;
+      reasons.push('IP address instead of domain');
+    }
+    if (parsed.username || host.includes('@')) {
+      score += 20;
+      reasons.push('Credentials in URL');
+    }
+    if (host.includes('-')) {
+      score += 15;
+      reasons.push('Hyphenated domain');
+    }
+    if (/xn--/.test(host)) {
+      score += 15;
+      reasons.push('Internationalized domain (punycode)');
+    }
+    if (url.length > 75) {
+      score += 10;
+      reasons.push('Unusually long URL');
+    }
+    const found = HARVEST_KEYWORDS.filter(
+      (k) => host.includes(k) || parsed.pathname.toLowerCase().includes(k),
+    );
+    if (found.length) {
+      score += 10 * found.length;
+      reasons.push('Credential-harvesting keywords: ' + found.join(', '));
+    }
+    const dots = host.split('.').length - 1;
+    if (dots >= 4) {
+      score += 10;
+      reasons.push('Deep subdomain chain');
+    }
+  } catch {
+    // invalid URL handled by caller
+  }
+  return { score: Math.min(100, score), reasons };
+}
+
+export default function Hero({ onScanComplete }) {
+  const [formError, setFormError] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
+  const inputRef = useRef(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    const raw = inputRef.current.value.trim();
+    if (!raw) {
+      setFormError('Please enter a website URL.');
+      return;
+    }
+    let url = raw;
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    try {
+      new URL(url);
+    } catch {
+      setFormError('That does not look like a valid URL.');
+      return;
+    }
+    inputRef.current.blur();
+
+    const btn = document.getElementById('scan-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Scanning\u2026';
+    setIsScanning(true);
+
+    try {
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      let body = {};
+      try { body = await res.json(); } catch { /* non-JSON */ }
+      if (!res.ok) {
+        throw new Error(body.error || 'Scan failed.');
+      }
+      if (onScanComplete) onScanComplete(body);
+    } catch (err) {
+      setFormError(err.message || 'Scan failed. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      setIsScanning(false);
+    }
+  };
+
+  return (
+    <section className="hero" id="hero" aria-labelledby="hero-h">
+      <div className="container split">
+        <div className="text-first">
+          <div className="kicker wave-ribbon">
+            <TextLoop
+              text="THREAT ANALYSIS • WEB SECURITY • CERTIFICATE VALIDATION • THREAT INTELLIGENCE"
+              shape="wave"
+              speed={70}
+              curviness={40}
+              fontSize={20}
+              fontWeight={700}
+              letterSpacing={3}
+              uppercase
+              ribbon
+              ribbonColor="#6366f1"
+              ribbonWidth={34}
+              pauseOnHover
+            />
+          </div>
+          <h1 id="hero-h">Verify links before you click.</h1>
+          <p className="tagline">
+            Sentinel checks reputation, page security, TLS certificates, and
+            community reports in one scan &mdash; then gives you a plain-language
+            verdict.
+          </p>
+          <form id="scan-form" className="input-group" novalidate onSubmit={handleSubmit}>
+            <label htmlFor="url-input" className="sr-only">Website URL</label>
+            <input
+              ref={inputRef}
+              id="url-input"
+              className="input"
+              type="url"
+              placeholder="https://example.com/login"
+              aria-label="Website URL"
+              required
+              disabled={isScanning}
+            />
+            <button type="submit" className="btn btn--accent" id="scan-btn" disabled={isScanning}>
+              {isScanning ? 'Scanning\u2026' : 'Scan link'}
+            </button>
+          </form>
+          <div id="form-error" className="form-error" role="alert" aria-live="polite">
+            {formError}
+          </div>
+        </div>
+        <div className="visual">
+          <div className="globe-wrap globe-visual" />
+        </div>
+      </div>
+    </section>
+  );
+}

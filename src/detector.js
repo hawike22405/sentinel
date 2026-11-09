@@ -6,6 +6,8 @@ import { isIP } from 'node:net';
 import { lookup as dnsLookup, promises as dnsPromises } from 'node:dns';
 
 const REQUEST_TIMEOUT_MS = 6000;
+// Only standard web ports: stops the scanner being used as a port scanner against third parties.
+const ALLOWED_PORTS = new Set(['', '80', '443', '8080', '8443']);
 
 // Known-bad signal patterns used only for the simulated reputation layer.
 // These are deterministic heuristics, not a live threat feed.
@@ -87,8 +89,11 @@ export function validateTargetUrl(input) {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     return { ok: false, error: 'Only http:// and https:// URLs can be scanned.' };
   }
-  if (!url.hostname) {
-    return { ok: false, error: 'The URL is missing a hostname.' };
+  if (!url.hostname || url.hostname.length > 253) {
+    return { ok: false, error: 'The URL is missing a valid hostname.' };
+  }
+  if (!ALLOWED_PORTS.has(url.port)) {
+    return { ok: false, error: 'Only standard web ports (80, 443, 8080, 8443) can be scanned.' };
   }
   if (isPrivateHostname(url.hostname)) {
     return { ok: false, error: 'Scanning local or private addresses is not allowed.' };
@@ -147,7 +152,10 @@ function computeReputation(input) {
   return { score: Math.min(100, score), reasons };
 }
 
-function fetchHeaders(url) {
+function fetchHeaders(input) {
+  const url = new URL(input);
+  url.username = ''; // never forward credentials typed into the scanned URL
+  url.password = '';
   return new Promise((resolve, reject) => {
     const secure = url.protocol === 'https:';
     const req = (secure ? getSecure : get)(
@@ -238,7 +246,7 @@ function validateCertificate(url) {
 
 function scoreToVerdict(score) {
   if (score <= 33) return 'safe';
-  if (score <= 59) return 'suspicious';
+  if (score <= 66) return 'suspicious';
   return 'malicious';
 }
 

@@ -1,0 +1,42 @@
+# Security report: Sentinel
+
+Status of the 27-item hardening checklist. "Verified" means covered by `npm test` (72 checks, real HTTP against real server instances) or a command named below.
+
+| # | Item | Result | Evidence |
+|---|------|--------|----------|
+| 1 | Authentication | Done where applicable: the scanner is public by design (PRD: no accounts). The one privileged action, report moderation, needs a bearer token. | tests 1/9 |
+| 2 | Hide API keys | Nothing to hide: no keys exist in code, config or history. | grep + gitleaks |
+| 3 | Lock the database | Done: DB outside web root, dir 0700, files 0600 (incl. WAL), parameterized only. | test 3 |
+| 4 | Enforce HTTPS | Done at app level (308 redirect to PUBLIC_HOST, HSTS only on HTTPS). TLS itself must be terminated by a proxy/host. | test 4 |
+| 5 | Hash passwords | N/A: there are no passwords. Admin token is compared by SHA-256 digest in constant time. | code review |
+| 6 | Server-side validation | Done: type, length, scheme, port, UUID, JSON-only, body size. | test 6 |
+| 7 | Block XSS | Done: no HTML sinks in frontend (`textContent` only), strict CSP, URLs percent-encoded. | grep + test 7 |
+| 8 | Log suspicious activity | Done: JSON events for SSRF attempts, invalid URLs, bad content-type, bad JSON, oversize bodies, rate limits, admin failures. No secrets logged. | test 8 |
+| 9 | Lock admin routes | Done: token auth, 10 req/min, 404 when disabled, weak tokens refused. | test 1/9, 11 |
+| 10 | Parameterized queries | Verified: every query uses prepared statements with bound values; injection payload stored inert. | grep + test 10 |
+| 11 | Env variables | Done: `.env` loaded first, `.env.example` documented, `.env` git-ignored. | test 11 |
+| 12 | Rate limiting | Done: 120/min general, 15/min scan+report, 10/min admin, plus max 10 concurrent scans. | test 12 |
+| 13 | Restrict CORS | Done: CORS fully off unless one FRONTEND_ORIGIN is set. | test 13 |
+| 14 | Security headers | Done: CSP, XFO, nosniff, referrer, permissions, COOP, CORP, no X-Powered-By, API no-store. | test 14 |
+| 15 | Secure cookies | N/A: the app sets no cookies (verified). | test 15 |
+| 16 | CSRF protection | Not needed (no cookie auth); POSTs must be `application/json` so cross-site forms cannot submit. | test 16 |
+| 17 | Expiring reset links | N/A: no accounts or resets. | n/a |
+| 18 | Upload limits | No uploads exist; multipart rejected; JSON body capped at 16 KB. | test 18 |
+| 19 | Verify prices | N/A: no payments (PRD non-goal). | n/a |
+| 20 | Debug mode off | Done: generic 500s, JSON 404s, no stacks in responses. | test 20 |
+| 21 | Update dependencies | All current; `npm audit`: 0 vulnerabilities. | npm audit/outdated |
+| 22 | Remove unused packages | All 4 dependencies are used. | import grep |
+| 23 | Exposed files | Fixed (repo root was served). 17 paths incl. traversal now 404. | test 23 |
+| 24 | Scan Git history | 4 commits + working tree + committed zip: no secrets. | gitleaks 8.18.4 |
+| 25 | Revoke leaked keys | Nothing leaked, nothing to revoke. | gitleaks |
+| 26 | Full security review | Done; see Open items. | this file |
+| 27 | Test + report | `npm test`, this file. | |
+
+## Open items
+- TLS is not terminated by the app. Deploy behind a TLS proxy and set `TRUST_PROXY=1`, `FORCE_HTTPS=1`, `PUBLIC_HOST`. Without `TRUST_PROXY=1` behind a proxy, all users share one rate-limit bucket.
+- Rate limits are per-IP and in memory (reset on restart, not shared across instances).
+- Report poisoning: anyone can report a legitimate site and raise its score (+20 per report, capped at +40). Needs de-duplication/moderation workflow beyond the delete endpoint.
+- Scanner still makes outbound requests. Private/loopback/link-local ranges and rebinding are blocked at connect time, but NAT64 (64:ff9b::/96) and 6to4 (2002::/16) prefixes are not.
+- The database is not encrypted at rest; logs go to stderr only (no retention or alerting).
+- GitHub-side items were not reviewed: Actions secrets, forks, deleted branches, repo visibility, branch protection.
+- If cookies, accounts or payments are added later, items 5, 15, 16, 17 and 19 must be built and tested then.

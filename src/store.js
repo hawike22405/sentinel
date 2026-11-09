@@ -1,13 +1,18 @@
 import Database from 'better-sqlite3';
 import { join } from 'node:path';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, chmodSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const DATA_DIR = join(fileURLToPath(new URL('..', import.meta.url)), 'data');
-mkdirSync(DATA_DIR, { recursive: true });
+// 3. Database lives outside the web root, owner-only (dir 0700, files 0600; umask covers WAL/SHM files).
+const DATA_DIR = process.env.SENTINEL_DATA_DIR || join(fileURLToPath(new URL('..', import.meta.url)), 'data');
+process.umask(0o077);
+mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+try { chmodSync(DATA_DIR, 0o700); } catch { /* unsupported on some platforms */ }
 
 const db = new Database(join(DATA_DIR, 'sentinel.db'));
 db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
+try { chmodSync(join(DATA_DIR, 'sentinel.db'), 0o600); } catch { /* unsupported on some platforms */ }
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS scans (
@@ -52,6 +57,7 @@ const getScan = db.prepare('SELECT * FROM scans WHERE id = ?');
 const insertReport = db.prepare(
   'INSERT INTO reports (id, url, host, type, source, created_at) VALUES (?, ?, ?, ?, ?, ?)'
 );
+const removeReport = db.prepare('DELETE FROM reports WHERE id = ?');
 const countByHost = db.prepare('SELECT COUNT(*) AS n FROM reports WHERE host = ?');
 const getReports = db.prepare(
   'SELECT * FROM reports ORDER BY created_at DESC LIMIT ?'
@@ -78,6 +84,10 @@ export function createReport({ id, url, type, source }) {
   let host = null;
   try { host = new URL(url).hostname; } catch { /* keep null */ }
   insertReport.run(id, url, host, type, source, new Date().toISOString());
+}
+
+export function deleteReport(id) {
+  return removeReport.run(id).changes > 0;
 }
 
 export function countReportsForHost(host) {

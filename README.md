@@ -9,7 +9,7 @@ Sentinel is an intelligent platform that detects phishing and malicious websites
 - **Certificate validation** — live TLS certificate chain, expiry, and issuer inspection
 - **Collaborative threat intelligence** — community-submitted threat reports with source and timestamp
 - **Risk score & verdict** — 0–100 risk score with Safe / Suspicious / Malicious badge
-- **Animated UI** — dark/light themes, glassmorphism components, custom cursor, hero load entrance, terminal threat scan animation
+- **Animated UI** — dark/light themes, glassmorphism components, custom cursor, hero load entrance, canvas threat globe
 
 ## Tech stack
 
@@ -87,6 +87,10 @@ node scripts/gate-lint.mjs GATES.backend.md
 # Full backend verification (starts server on a test port)
 node scripts/verify-all-backend.mjs
 ```
+
+## Security
+
+See [SECURITY.md](SECURITY.md). Copy `.env.example` to `.env` to configure. Run `npm test` for the security regression suite. Deploy behind a TLS-terminating proxy with `TRUST_PROXY=1`, `FORCE_HTTPS=1` and `PUBLIC_HOST` set.
 
 ## Scope (this slice)
 
