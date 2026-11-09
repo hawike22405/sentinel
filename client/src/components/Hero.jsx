@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import TextLoop from './TextLoop';
+import CurvedInput from './CurvedInput';
 
 const HARVEST_KEYWORDS = [
   'login', 'verify', 'secure', 'account', 'paypal', 'bank',
@@ -59,25 +60,22 @@ function computeScore(url) {
 export default function Hero({ onScanComplete }) {
   const [formError, setFormError] = useState('');
   const [isScanning, setIsScanning] = useState(false);
-  const inputRef = useRef(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (url) => {
     setFormError('');
-    const raw = inputRef.current.value.trim();
+    const raw = url.trim();
     if (!raw) {
       setFormError('Please enter a website URL.');
       return;
     }
-    let url = raw;
-    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    let urlStr = raw;
+    if (!/^https?:\/\//i.test(urlStr)) urlStr = 'https://' + urlStr;
     try {
-      new URL(url);
+      new URL(urlStr);
     } catch {
       setFormError('That does not look like a valid URL.');
       return;
     }
-    inputRef.current.blur();
 
     const btn = document.getElementById('scan-btn');
     const originalText = btn.textContent;
@@ -89,7 +87,7 @@ export default function Hero({ onScanComplete }) {
       const res = await fetch('/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: urlStr }),
       });
       let body = {};
       try { body = await res.json(); } catch { /* non-JSON */ }
@@ -132,22 +130,20 @@ export default function Hero({ onScanComplete }) {
             community reports in one scan &mdash; then gives you a plain-language
             verdict.
           </p>
-          <form id="scan-form" className="input-group" novalidate onSubmit={handleSubmit}>
-            <label htmlFor="url-input" className="sr-only">Website URL</label>
-            <input
-              ref={inputRef}
-              id="url-input"
-              className="input"
-              type="url"
+          <div className="input-group">
+            <CurvedInput
               placeholder="https://example.com/login"
-              aria-label="Website URL"
-              required
-              disabled={isScanning}
+              buttonText="Scan link"
+              theme="dark"
+              bend={28}
+              height={64}
+              width={560}
+              onSubmit={handleSubmit}
+              type="url"
+              showButton
+              showIcon
             />
-            <button type="submit" className="btn btn--accent" id="scan-btn" disabled={isScanning}>
-              {isScanning ? 'Scanning\u2026' : 'Scan link'}
-            </button>
-          </form>
+          </div>
           <div id="form-error" className="form-error" role="alert" aria-live="polite">
             {formError}
           </div>

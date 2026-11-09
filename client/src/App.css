@@ -1068,3 +1068,37 @@ html:not(.is-loading) .hero .scan {
     opacity: 1;
   }
 }
+
+/* Curved Input */
+.curved-input-wrapper {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto 0;
+}
+
+.curved-input-svg {
+  overflow: visible;
+}
+
+.curved-input-button {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  border: none;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  padding: 0 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.curved-input-button:hover {
+  background: #70d6f7;
+}
+
+/* Update hero input group to use curved input */
+.hero .input-group {
+  width: 100%;
+  max-width: none;
+  gap: 0;
+}
