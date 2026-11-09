@@ -359,15 +359,68 @@ p {
 }
 
 .kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--color-accent);
   margin-bottom: 16px;
+}
+
+.text-loop {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  padding: 8px 0;
+  border-radius: var(--radius-pill);
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.12);
+}
+
+.text-loop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.12) 50%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.text-loop-track {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  animation: text-loop-scroll 14s linear infinite;
+  width: max-content;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-loop-track {
+    animation: none;
+  }
+}
+
+.text-loop-item {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.text-loop-item:hover {
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.text-loop-sep {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+@keyframes text-loop-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 .mono {
@@ -465,6 +518,7 @@ p {
 
 /* ---- Load-enter animation (hero) ---- */
 html.is-loading .hero .kicker,
+html.is-loading .hero .text-loop,
 html.is-loading .hero h1,
 html.is-loading .hero .tagline,
 html.is-loading .hero .scan,
