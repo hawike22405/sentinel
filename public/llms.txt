@@ -11,11 +11,23 @@ Sentinel detects phishing and malicious websites through threat analysis, web se
 - docs/code-standards.md — reusable patterns and utilities
 - context/progress.md — session memory: completed slices, active bugs, next steps
 
-## Presentation layer
-- index.html — single-page website: hero, URL scanner, security assessment, certificate validation, threat intelligence feed
-- assets/css/style.css — design tokens + component styles
-- assets/js/app.js — vanilla JS interactions
+## Presentation layer (React + Vite frontend)
+- client/src/App.jsx — root component
+- client/src/components/Hero.jsx — hero section with threat scanner
+- client/src/components/Pillars.jsx — four threat analysis pillars
+- client/src/components/ScanResult.jsx — scan result with gauge & verdict
+- client/src/components/ThreatFeed.jsx — collaborative threat feed
+- client/src/components/TextLoop.jsx — animated wave ribbon
+- client/src/components/CurvedInput.jsx — curved URL input
+- client/src/components/Lightfall.jsx — animated page background
+- client/src/components/ThemeToggle.jsx — dark/light theme toggle
+- client/src/components/Footer.jsx — footer
+- client/src/main.jsx — React entry point
+- client/src/App.css — global styles & design tokens
 
 ## Verification
-- scripts/verify-all.mjs — full re-verification (lint + foundation + website)
-- GATES.md — completion ledger with observable gates
+- scripts/verify-all-backend.mjs — full backend verification
+- scripts/security-tests.mjs — 72-check security regression suite
+- scripts/gate-lint.mjs — gate ledger linter
+- GATES.md — frontend completion ledger
+- GATES.backend.md — backend completion ledger
