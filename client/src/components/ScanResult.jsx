@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import SecurityChart from './SecurityChart';
 
 const badgeMap = {
   safe: 'badge--safe',
@@ -135,25 +136,8 @@ export default function ScanResult({ result }) {
   const emptyState = (
     <section className="section section--short" id="scan" aria-labelledby="scan-h">
       <div className="container result-wrap">
-        <div className="result-card">
-          <div className="gauge-wrap">
-            <div className="gauge" id="gauge" />
-            <div className="gauge-needle" ref={needleRef} />
-            <div className="gauge-label" ref={scoreRef}>
-              --
-            </div>
-          </div>
-          <div className="gauge-legend" id="gauge-legend">
-            <span>
-              <span className="gauge-dot gauge-dot--success" /> Safe
-            </span>
-            <span>
-              <span className="gauge-dot gauge-dot--warning" /> Suspicious
-            </span>
-            <span>
-              <span className="gauge-dot gauge-dot--danger" /> Malicious
-            </span>
-          </div>
+        <div className="result-chart-pane">
+          <SecurityChart result={null} />
         </div>
         <div className="card-glass checks-panel">
           <h2>
@@ -240,25 +224,8 @@ export default function ScanResult({ result }) {
   return (
     <section className="section section--short" id="scan" aria-labelledby="scan-h">
       <div className="container result-wrap">
-        <div className="result-card">
-          <div className="gauge-wrap">
-            <div className="gauge" id="gauge" />
-            <div className="gauge-needle" ref={needleRef} />
-            <div className="gauge-label" ref={scoreRef}>
-              {score}
-            </div>
-          </div>
-          <div className="gauge-legend" id="gauge-legend">
-            <span>
-              <span className="gauge-dot gauge-dot--success" /> Safe
-            </span>
-            <span>
-              <span className="gauge-dot gauge-dot--warning" /> Suspicious
-            </span>
-            <span>
-              <span className="gauge-dot gauge-dot--danger" /> Malicious
-            </span>
-          </div>
+        <div className="result-chart-pane">
+          <SecurityChart result={result} />
         </div>
         <div className="card-glass checks-panel">
           <h2>
