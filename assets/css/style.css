@@ -362,65 +362,48 @@ p {
   margin-bottom: 16px;
 }
 
-.text-loop {
-  position: relative;
-  overflow: hidden;
+/* ---- Wave ribbon (animated scrolling text along a wave path) ---- */
+.wave-ribbon {
   width: 100%;
-  padding: 8px 0;
-  border-radius: var(--radius-pill);
-  background: rgba(56, 189, 248, 0.06);
-  border: 1px solid rgba(56, 189, 248, 0.12);
+  overflow: hidden;
+  margin: 16px 0;
 }
 
-.text-loop::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.12) 50%, transparent 100%);
-  pointer-events: none;
-  z-index: 1;
+.wave-svg {
+  width: 100%;
+  height: 130px;
+  display: block;
 }
 
-.text-loop-track {
-  display: flex;
-  gap: 18px;
-  align-items: center;
-  position: relative;
-  z-index: 2;
-  animation: text-loop-scroll 14s linear infinite;
-  width: max-content;
+.ribbon-band {
+  stroke: #6366f1;
+  stroke-width: 48;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 10px 30px rgba(99, 102, 241, 0.4));
+}
+
+.wave-text {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  fill: #ffffff;
+}
+
+.text-path {
+  /* animated via JS (startOffset) */
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .text-loop-track {
-    animation: none;
+  .wave-svg {
+    height: auto;
   }
-}
-
-.text-loop-item {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-accent);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  padding: 2px 8px;
-  border-radius: 6px;
-}
-
-.text-loop-item:hover {
-  background: rgba(56, 189, 248, 0.15);
-}
-
-.text-loop-sep {
-  color: var(--color-text-muted);
-  font-weight: 400;
-}
-
-@keyframes text-loop-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  .wave-text {
+    fill: var(--color-text-muted);
+  }
 }
 
 .mono {
@@ -518,7 +501,7 @@ p {
 
 /* ---- Load-enter animation (hero) ---- */
 html.is-loading .hero .kicker,
-html.is-loading .hero .text-loop,
+html.is-loading .hero .wave-ribbon,
 html.is-loading .hero h1,
 html.is-loading .hero .tagline,
 html.is-loading .hero .scan,

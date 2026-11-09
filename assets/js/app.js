@@ -335,6 +335,32 @@
 
   loadFeed();
 
+  // ---------- Wave ribbon animation (animated scrolling text along wave path) ----------
+  const wavePath = document.getElementById('sentinel-wave');
+  const textPathEl = document.querySelector('.text-path');
+
+  if (wavePath && textPathEl) {
+    const unit = 'THREAT ANALYSIS • WEB SECURITY • CERTIFICATE VALIDATION • THREAT INTELLIGENCE • ';
+    const pathLen = wavePath.getTotalLength();
+
+    // Repeat text enough times to cover path plus extra for smooth scrolling
+    const repeatCount = Math.ceil(pathLen / 120) + 3;
+    textPathEl.textContent = unit.repeat(repeatCount);
+
+    // Approximate width of one text unit in SVG user units (fontSize 24px)
+    const approxUnitWidth = unit.length * 24 * 0.62;
+
+    let offset = 0;
+    function animate() {
+      offset += 0.7;
+      if (offset >= approxUnitWidth) offset = 0;
+      textPathEl.setAttribute('startOffset', offset);
+      requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+  }
+
   // ---------- Terminal animation (replaces globe visual) ----------
   const typingEl = document.getElementById('terminal-typing');
   const cursorEl = document.getElementById('terminal-cursor');
