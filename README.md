@@ -9,36 +9,71 @@ Sentinel is an intelligent platform that detects phishing and malicious websites
 - **Certificate validation** — live TLS certificate chain, expiry, and issuer inspection
 - **Collaborative threat intelligence** — community-submitted threat reports with source and timestamp
 - **Risk score & verdict** — 0–100 risk score with Safe / Suspicious / Malicious badge
-- **Animated UI** — dark/light themes, glassmorphism components, custom cursor, hero load entrance, canvas threat globe
+- **Animated UI** — dark/light themes, glassmorphism components, custom cursor, hero load entrance, animated wave ribbon, Lightfall page background, curved URL input
+- **Security hardening** — SSRF protection, rate limiting, CSP headers, input validation, SQLite WAL mode
 
 ## Tech stack
 
-- Frontend: vanilla HTML/CSS/JS (no build step)
-- Backend: Node.js + Express 5 (ES modules)
-- Database: SQLite (better-sqlite3, WAL mode)
+- **Frontend:** React 18 + Vite + GSAP (builds to `public/`)
+- **Backend:** Node.js + Express 5 (ES modules) — serves API + static frontend
+- **Database:** SQLite (better-sqlite3, WAL mode)
+- **Security:** Rate limiting, CORS restriction, security headers, SSRF guard, input validation
 
 ## Project structure
 
 ```
 sentinel/
-├── index.html             # animated frontend (served by the backend)
-├── assets/css/style.css   # design tokens + glassmorphism components
-├── assets/js/app.js       # frontend interactions + scanner API calls
-├── server.js              # Express backend (serves API + static frontend)
-├── src/
-│   ├── store.js           # SQLite storage layer
-│   ├── detector.js        # detection engine (headers, TLS cert, heuristics)
-│   └── routes.js          # REST API routes
-├── scripts/               # verification oracles (gate checks)
-├── package.json
-├── PRD.md                 # product requirements
-├── DESIGN.md              # visual design system & tokens
-├── AGENTS.md              # cross-agent rules
-├── CLAUDE.md              # persistent tool context
-├── GATES.md               # frontend completion ledger
-├── GATES.backend.md       # backend completion ledger
-├── PLAN.md / PLAN.backend.md
-└── context/progress.md    # session memory
+├── index.html                  # HTML entry point (served by backend)
+├── package.json                # backend dependencies & scripts
+├── server.js                   # Express backend (serves API + static frontend)
+├── PRD.md                      # product requirements
+├── DESIGN.md                   # visual design system & tokens
+├── AGENTS.md                   # cross-agent rules
+├── CLAUDE.md                   # persistent tool context
+├── GATES.md                    # frontend completion ledger
+├── GATES.backend.md            # backend completion ledger
+├── PLAN.md / PLAN.backend.md   # project plans
+├── public/llms.txt             # documentation index for agents
+├── public/assets/              # built frontend assets (CSS, JS, fonts)
+├── client/                     # React frontend source
+│   ├── index.html              # Vite entry HTML
+│   ├── vite.config.js          # Vite configuration
+│   ├── package.json            # frontend dependencies
+│   ├── src/
+│   │   ├── main.jsx            # React entry point
+│   │   ├── App.jsx             # root component
+│   │   ├── App.css             # global styles & design tokens
+│   │   ├── components/
+│   │   │   ├── App.jsx
+│   │   │   ├── CurvedInput.jsx         # curved URL input
+│   │   │   ├── Footer.jsx
+│   │   │   ├── Hero.jsx            # hero section with scanner
+│   │   │   ├── Lightfall.jsx       # animated page background
+│   │   │   ├── Lightfall.css       # lightfall styles
+│   │   │   ├── Moments.jsx
+│   │   │   ├── Pillars.jsx
+│   │   │   ├── ScanResult.jsx      # scan result display
+│   │   │   ├── TextLoop.jsx        # animated wave ribbon
+│   │   │   ├── TextLoop.css        # text loop styles
+│   │   │   ├── ThemeToggle.jsx     # dark/light theme toggle
+│   │   │   └── ThreatFeed.jsx      # collaborative threat feed
+│   └── public/
+├── docs/
+│   ├── architecture.md         # system boundaries & patterns
+│   └── code-standards.md       # reusable patterns & utilities
+├── scripts/
+│   ├── verify-all-backend.mjs  # full backend verification
+│   ├── verify-server.mjs       # server startup + health check
+│   ├── verify-scan.mjs         # scan endpoint validation
+│   ├── verify-storage.mjs      # storage persistence check
+│   ├── verify-deps.mjs         # dependency check
+│   ├── verify-foundation.mjs   # foundation files check
+│   ├── verify-website.mjs      # website structure check
+│   ├── security-tests.mjs      # 72-check security regression suite
+│   └── gate-lint.mjs           # gate ledger linter
+├── .env.example                # environment variables template
+├── .gitignore
+└── context/progress.md         # session memory
 ```
 
 ## API endpoints
@@ -50,6 +85,7 @@ sentinel/
 | GET | `/api/scan/:id` | Get a scan result by ID |
 | GET | `/api/feed` | List community threat reports |
 | POST | `/api/feed/report` | Submit a threat report (body: `{ url, type, source }`) |
+| DELETE | `/api/admin/reports/:id` | Delete a report (requires `ADMIN_TOKEN`) |
 
 ## Run locally
 
@@ -65,6 +101,17 @@ cd sentinel
 npm install
 ```
 
+### Build the frontend
+
+```bash
+cd client
+npm install
+npm run build
+cd ..
+```
+
+This builds the React frontend into `public/assets/`.
+
 ### Start the server
 
 ```bash
@@ -75,7 +122,7 @@ The server starts on `http://localhost:3000` (or the port in the `PORT` env vari
 
 ### Run without the backend (frontend only)
 
-Open `index.html` directly in a browser. The scanner will show its initial state; the live scan requires the backend running.
+Open `public/index.html` directly in a browser. The scanner will show its initial state; the live scan requires the backend running.
 
 ### Run verification checks
 
@@ -86,6 +133,9 @@ node scripts/gate-lint.mjs GATES.backend.md
 
 # Full backend verification (starts server on a test port)
 node scripts/verify-all-backend.mjs
+
+# Full security regression suite (72 checks)
+npm test
 ```
 
 ## Security
