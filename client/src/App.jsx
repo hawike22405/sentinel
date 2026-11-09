@@ -42,7 +42,7 @@ export default function App() {
       <nav className="nav">
         <div className="wrap">
           <a href="#" className="brand" aria-label="Sentinel home">
-            <span className="mark">S</span>
+            <span className="mark" aria-hidden="true">●</span>
             Sentinel
           </a>
           <div className="nav-actions">

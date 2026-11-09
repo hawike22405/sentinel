@@ -163,7 +163,7 @@ export default function ScanResult({ result }) {
             </svg>
             <div className="text">
               <strong>Reputation</strong>
-              <span>No known-bad listings found.</span>
+              <span>—</span>
             </div>
           </div>
           <div className="check check--warn" ref={checkRefs.headers} id="check-headers">
@@ -172,7 +172,7 @@ export default function ScanResult({ result }) {
             </svg>
             <div className="text">
               <strong>Security headers</strong>
-              <span>Missing strict-transport-security.</span>
+              <span>—</span>
             </div>
           </div>
           <div className="check check--bad" ref={checkRefs.certificate} id="check-certificate">
@@ -181,7 +181,7 @@ export default function ScanResult({ result }) {
             </svg>
             <div className="text">
               <strong>Certificate</strong>
-              <span>Chain incomplete; self-signed intermediate.</span>
+              <span>—</span>
             </div>
           </div>
           <div className="check check--bad" ref={checkRefs.threat} id="check-threat-intel">
@@ -190,38 +190,30 @@ export default function ScanResult({ result }) {
             </svg>
             <div className="text">
               <strong>Threat intelligence</strong>
-              <span>1 community report in the last 24 hours.</span>
+              <span>—</span>
             </div>
           </div>
           <div className="cert-panel mt-6">
             <h3>Certificate details</h3>
             <div className="field">
               <span className="key">Issuer</span>
-              <span className="val mono" id="cert-issuer">
-                Not scanned
-              </span>
+              <span className="val mono" id="cert-issuer">—</span>
             </div>
             <div className="field">
               <span className="key">Expires</span>
-              <span className="val mono" id="cert-expires">
-                Not scanned
-              </span>
+              <span className="val mono" id="cert-expires">—</span>
             </div>
             <div className="field">
               <span className="key">Chain</span>
-              <span className="val mono" style={{ color: 'var(--color-warning)' }} id="cert-chain">
-                Incomplete
-              </span>
+              <span className="val mono" style={{ color: 'var(--color-warning)' }} id="cert-chain">—</span>
             </div>
             <div className="field">
               <span className="key">Transparency log</span>
-              <span className="val mono">Present</span>
+              <span className="val mono">—</span>
             </div>
             <div className="field">
               <span className="key">Fingerprint (SHA-256)</span>
-              <span className="val mono cert-fp" id="cert-fingerprint">
-                a4&hellip;1f
-              </span>
+              <span className="val mono cert-fp" id="cert-fingerprint">—</span>
             </div>
           </div>
         </div>

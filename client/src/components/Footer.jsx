@@ -3,7 +3,7 @@ export default function Footer() {
     <footer className="footer">
       <div className="container">
         <a href="#" className="brand" aria-label="Sentinel">
-          <span className="mark">S</span>
+          <span className="mark" aria-hidden="true">●</span>
           Sentinel
         </a>
         <p>

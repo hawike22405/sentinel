@@ -114,15 +114,15 @@ export default function Hero({ onScanComplete }) {
             <TextLoop
               text="THREAT ANALYSIS • WEB SECURITY • CERTIFICATE VALIDATION • THREAT INTELLIGENCE"
               shape="wave"
-              speed={70}
-              curviness={40}
-              fontSize={20}
-              fontWeight={700}
-              letterSpacing={3}
+              speed={50}
+              curviness={25}
+              fontSize={16}
+              fontWeight={600}
+              letterSpacing={2}
               uppercase
               ribbon
               ribbonColor="#6366f1"
-              ribbonWidth={34}
+              ribbonWidth={20}
               pauseOnHover
             />
           </div>
@@ -152,9 +152,7 @@ export default function Hero({ onScanComplete }) {
             {formError}
           </div>
         </div>
-        <div className="visual">
-          <div className="globe-wrap globe-visual" />
-        </div>
+        <div className="visual" />
       </div>
     </section>
   );
