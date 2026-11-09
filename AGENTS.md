@@ -33,14 +33,14 @@ This file establishes build/test commands, directory structure, and component al
 Buttons: primary (accent), outline, glass (sizes md). Cards: glass card.
 Inputs: text/url input with focus ring.
 Badges: safe / suspicious / malicious verdict chips.
-Visuals: canvas globe, radial gauge, needle.
+Visuals: canvas globe, radial gauge, needle, Lightfall page background (WebGL, fixed behind content, colors from tokens, respects `prefers-reduced-motion`).
 Glassmorphism: `.btn`, `.card-glass`, `.input`, `.nav`, `.theme-toggle`, `.feed`.
 
 ## Styling rules
 - Use CSS custom properties from `assets/css/style.css` only; no raw hex values in markup or JS.
 - Dark theme by default with a manual light/dark toggle (persisted in localStorage, system preference respected).
 - Responsive. Max content width 1040px, centered.
-- Motion: load entrance (hero fades up once), custom cursor, hover/press states on all interactive elements. Respects `prefers-reduced-motion`.
+- Motion: load entrance (hero fades up once), custom cursor, hover/press states on all interactive elements, Lightfall background. Respects `prefers-reduced-motion`.
 - Glassmorphism: translucent surfaces with `backdrop-filter: blur`, subtle borders, no gradients except accents, no blobs, no neon.
 
 ## Prohibited patterns (AI slop)
