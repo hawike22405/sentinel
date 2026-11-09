@@ -42,13 +42,12 @@ body.rings-intro-lock {
 .rings-intro-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
-  font-size: 21px;
+  gap: 12px;
+  font-family: var(--font-display, 'Great Day', cursive, sans-serif);
+  font-size: 34px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.04em;
   color: #ffffff;
-  text-transform: uppercase;
   text-shadow: 0 0 24px rgba(168, 85, 247, 0.65);
 }
 
