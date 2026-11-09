@@ -308,23 +308,16 @@ p {
 }
 
 .hero .split {
-  display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 48px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: flex-start;
   text-align: left;
 }
 
 @media (max-width: 900px) {
   .hero .split {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-  .hero .text-first {
-    order: 1;
-  }
-  .hero .visual {
-    order: 2;
+    gap: 20px;
   }
 }
 
@@ -355,31 +348,12 @@ p {
   font-size: 15px;
 }
 
-.hero .visual {
-  position: relative;
-  height: 340px;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-@media (max-width: 900px) {
-  .hero .visual {
-    height: 300px;
-    margin-top: 10px;
-  }
-}
-
 /* Load-enter animation */
 html.is-loading .hero .kicker,
 html.is-loading .hero .wave-ribbon,
 html.is-loading .hero h1,
 html.is-loading .hero .tagline,
 html.is-loading .hero .scan,
-html.is-loading .hero .visual,
 html.is-loading .pillar,
 html.is-loading .result-card,
 html.is-loading .feed-item {
@@ -397,9 +371,6 @@ html:not(.is-loading) .hero .tagline {
 }
 html:not(.is-loading) .hero .scan {
   animation: fadeUp 0.8s var(--ease-out) 0.44s both;
-}
-html:not(.is-loading) .hero .visual {
-  animation: fadeUp 0.9s var(--ease-out) 0.2s both;
 }
 
 @keyframes fadeUp {
@@ -807,27 +778,13 @@ html:not(.is-loading) .hero .visual {
 .wave-ribbon {
   width: 100%;
   overflow: hidden;
-  margin: 16px 0;
+  margin: 0 0 24px 0;
   position: relative;
-}
-
-.wave-ribbon::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: rgba(99, 102, 241, 0.08);
-  filter: blur(24px);
-  transform: translateY(-50%);
-  z-index: 0;
-  pointer-events: none;
 }
 
 .wave-svg {
   width: 100%;
-  height: 100px;
+  height: 80px;
   display: block;
   position: relative;
   z-index: 1;
