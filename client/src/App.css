@@ -1,3 +1,5 @@
+@import "./components/ui/loader-3.css";
+
 :root {
   --color-bg: #000000;
   --color-surface: rgba(20, 20, 20, 0.55);

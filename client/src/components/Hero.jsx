@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { mountRibbon } from '../ribbon.js';
 import CurvedInput from './CurvedInput';
+import { Component as BoxLoader } from '@/components/ui/loader-3';
 
 const HARVEST_KEYWORDS = [
   'login', 'verify', 'secure', 'account', 'paypal', 'bank',
@@ -86,12 +87,16 @@ export default function Hero({ onScanComplete }) {
 
     setIsScanning(true);
 
+    const LOOP_DURATION_MS = 3000;
+    const minLoopWait = new Promise((resolve) => setTimeout(resolve, LOOP_DURATION_MS));
+    const scanPromise = fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: urlStr }),
+    });
+
     try {
-      const res = await fetch('/api/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: urlStr }),
-      });
+      const [res] = await Promise.all([scanPromise, minLoopWait]);
       let body = {};
       try { body = await res.json(); } catch { /* non-JSON */ }
       if (!res.ok) {
@@ -107,6 +112,26 @@ export default function Hero({ onScanComplete }) {
 
   return (
     <section className="hero" id="hero" aria-labelledby="hero-h">
+      {isScanning && (
+        <div
+          className="scan-loader-backdrop"
+          role="status"
+          aria-live="polite"
+          aria-label="Analyzing URL security"
+        >
+          <div className="scan-loader-card">
+            <BoxLoader />
+            <div className="scan-loader-badge">
+              <span className="scan-loader-pulse" aria-hidden="true" />
+              Scanning Target Link
+            </div>
+            <h2 className="scan-loader-title">Analyzing Security Indicators</h2>
+            <p className="scan-loader-desc">
+              Checking TLS certificate integrity, reputation databases, and heuristic evasion patterns&hellip;
+            </p>
+          </div>
+        </div>
+      )}
       <div className="wave-ribbon" ref={ribbonRef} style={{ height: 150 }} aria-hidden="true" />
       <div className="container split">
         <div className="text-first">
