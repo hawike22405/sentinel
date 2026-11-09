@@ -143,6 +143,7 @@ const TextLoop = ({
   scrollBoost = 0,
   outline = false,
   outlineWidth = 1.5,
+  cropToContent = true,
   className = '',
   style = {},
 }) => {
@@ -162,6 +163,8 @@ const TextLoop = ({
     reps: 1,
     crossLength: 0,
     crossReps: 1,
+    top: 0,
+    height: VIEW_H,
   });
 
   const rawId = useId();
@@ -234,12 +237,31 @@ const TextLoop = ({
       if (!length) return;
 
       const repsFor = (total) => (unitWidth > 0 ? Math.max(1, Math.round(total / unitWidth)) : 1);
-      const next = { length, reps: repsFor(length), crossLength, crossReps: repsFor(crossLength) };
+
+      // Crop the canvas vertically to the ribbon itself so no empty space is left above or below it.
+      // (Rotated or crossed ribbons keep the full canvas, because their extent is not axis-aligned.)
+      let top = 0;
+      let height = VIEW_H;
+      if (cropToContent && !mainAngle && !cross) {
+        try {
+          const box = pathEl.getBBox();
+          const pad = (ribbon ? ribbonWidth / 2 : fontSize * 0.7) + 4;
+          top = Math.max(0, Math.floor(box.y - pad));
+          height = Math.min(VIEW_H, Math.ceil(box.y + box.height + pad)) - top;
+          if (!(height > 0)) { top = 0; height = VIEW_H; }
+        } catch {
+          /* getBBox unavailable: keep the full canvas */
+        }
+      }
+
+      const next = { length, reps: repsFor(length), crossLength, crossReps: repsFor(crossLength), top, height };
       setMetrics((prev) =>
         prev.length === next.length &&
         prev.reps === next.reps &&
         prev.crossLength === next.crossLength &&
-        prev.crossReps === next.crossReps
+        prev.crossReps === next.crossReps &&
+        prev.top === next.top &&
+        prev.height === next.height
           ? prev
           : next,
       );
@@ -253,7 +275,7 @@ const TextLoop = ({
     return () => {
       cancelled = true;
     };
-  }, [d, crossD, unit, fontSize, fontWeight, letterSpacing]);
+  }, [d, crossD, unit, fontSize, fontWeight, letterSpacing, cropToContent, mainAngle, cross, ribbon, ribbonWidth]);
 
   useIsomorphicLayoutEffect(() => {
     const { length, crossLength } = metrics;
@@ -489,7 +511,7 @@ const TextLoop = ({
       <svg
         ref={svgRef}
         className="text-loop-svg"
-        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+        viewBox={`0 ${metrics.top} ${VIEW_W} ${metrics.height}`}
         preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={text}

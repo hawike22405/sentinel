@@ -221,6 +221,85 @@ html:not(.m-cursor) .cursor-outline {
   display: none;
 }
 
+/* Navigation (fixed bar: brand on the left, actions pushed to the right) */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--nav-height);
+  z-index: 40;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.nav .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+}
+
+.brand:hover {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.brand .mark {
+  color: var(--color-accent);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+
+.theme-toggle {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--color-glass-border);
+  background: var(--color-glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--color-text);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.theme-toggle:hover {
+  background: var(--color-glass-hover);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
 /* Layout */
 .section {
   padding: 96px 0;
@@ -311,7 +390,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  align-items: flex-start;
+  align-items: stretch; /* lets the ribbon run the full container width */
   text-align: left;
 }
 
@@ -340,6 +419,7 @@ p {
 .hero .input-group {
   display: flex;
   gap: 10px;
+  max-width: 560px; /* keep the search form compact now the column is full width */
 }
 
 .hero .input-group .input {
