@@ -49,7 +49,7 @@ export default function Hero({ onScanComplete }) {
         throw new Error(body.error || 'Scan failed.');
       }
       if (!body.scoreVersion || !body.checks || !body.assessment) {
-        throw new Error('The scanner backend is outdated. Please update and restart Sentinel.');
+        throw new Error('This page is connected to an older scanner. Stop the previous Sentinel server, restart it, and open the address printed in your terminal.');
       }
       if (onScanComplete) {
         onScanComplete(body);
