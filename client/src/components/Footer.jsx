@@ -7,8 +7,8 @@ export default function Footer() {
           Sentinel
         </a>
         <p>
-          &copy; 2026 Sentinel. Presentation layer only &mdash; no live
-          scanning, no user data stored. See PRD.md for scope.
+          &copy; 2026 Sentinel. Limited live HTTP and TLS assessment. Website origins and results
+          are stored for approximately 30 days. No guarantee of safety.
         </p>
       </div>
     </footer>

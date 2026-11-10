@@ -10,7 +10,7 @@ const pillars = [
       </>
     ),
     title: 'Threat analysis',
-    desc: 'Known-bad lists, reputation signals, and suspicious patterns such as look-alike domains and credential-harvesting keywords.',
+    desc: 'URL-pattern heuristics including HTTP, IP hosts, punycode, and account-related keywords. No live blocklist or page-content analysis.',
   },
   {
     icon: (
@@ -20,7 +20,7 @@ const pillars = [
       </>
     ),
     title: 'Web security',
-    desc: 'HTTP security headers, exposed services, and software freshness &mdash; weak configurations raise the risk score.',
+    desc: 'Live HTTP response and security-header presence checks. Up to three validated redirects are followed. Exposed services and application vulnerabilities are not scanned.',
   },
   {
     icon: (
@@ -30,7 +30,7 @@ const pillars = [
       </>
     ),
     title: 'Certificate validation',
-    desc: 'TLS chain, expiry, transparency logs, and cryptographic strength. Weak certificates undermine the trust indicator.',
+    desc: 'TLS hostname, trust chain, validity dates, and available public-key size. No transparency, revocation, or CA key-generation audit.',
   },
   {
     icon: (
@@ -40,7 +40,7 @@ const pillars = [
       </>
     ),
     title: 'Threat intelligence',
-    desc: 'Community-reported threats with source and date, so newly spotted phishing pages are flagged faster than any single list.',
+    desc: 'Unverified community reports with source and date. Repeated reports are deduplicated and do not change the risk score.',
   },
 ];
 

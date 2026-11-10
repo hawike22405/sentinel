@@ -1,14 +1,14 @@
 # Sentinel
 
-Sentinel is an intelligent platform that detects phishing and malicious websites by combining threat analysis, web security assessment, certificate validation, and collaborative threat intelligence.
+Sentinel is a limited URL risk-assessment platform combining URL-pattern heuristics, live HTTP header inspection, TLS certificate checks, and unverified community reports. It does not establish that a website is safe or detect all phishing/malware. See [the security audit](docs/security-audit.md) for exact capabilities, storage, capacity and remaining work.
 
 ## Features
 
-- **Threat analysis** — reputation signals, look-alike domain detection, credential-harvesting keyword scanning
+- **Threat analysis** — URL-pattern signals (HTTP, IP hosts, punycode, length and account-related keywords); no live blocklist
 - **Web security assessment** — live HTTP security-header inspection (HSTS, X-Frame-Options, CSP, etc.)
 - **Certificate validation** — live TLS certificate chain, expiry, and issuer inspection
-- **Collaborative threat intelligence** — community-submitted threat reports with source and timestamp
-- **Risk score & verdict** — 0–100 risk score with Safe / Suspicious / Malicious badge
+- **Collaborative threat intelligence** — unverified community reports with source and timestamp; deduplicated and excluded from scoring
+- **Risk score & verdict** — versioned 0–100 heuristic risk index with Lower risk / Elevated risk / High risk / Inconclusive labels; not a probability
 - **Animated UI** — dark/light themes, glassmorphism components, custom cursor, hero load entrance, animated wave ribbon, Lightfall page background, curved URL input
 - **Security hardening** — SSRF protection, rate limiting, CSP headers, input validation, SQLite WAL mode
 
@@ -69,7 +69,7 @@ sentinel/
 │   ├── verify-deps.mjs         # dependency check
 │   ├── verify-foundation.mjs   # foundation files check
 │   ├── verify-website.mjs      # website structure check
-│   ├── security-tests.mjs      # 72-check security regression suite
+│   ├── security-tests.mjs      # security regression suite
 │   └── gate-lint.mjs           # gate ledger linter
 ├── .env.example                # environment variables template
 ├── .gitignore
@@ -84,7 +84,7 @@ sentinel/
 | POST | `/api/scan` | Scan a URL (body: `{ url }`) |
 | GET | `/api/scan/:id` | Get a scan result by ID |
 | GET | `/api/feed` | List community threat reports |
-| POST | `/api/feed/report` | Submit a threat report (body: `{ url, type, source }`) |
+| POST | `/api/feed/report` | Submit a threat report (body: `{ url, type }`; source is server-assigned) |
 | DELETE | `/api/admin/reports/:id` | Delete a report (requires `ADMIN_TOKEN`) |
 
 ## Run locally
@@ -134,7 +134,7 @@ node scripts/gate-lint.mjs GATES.backend.md
 # Full backend verification (starts server on a test port)
 node scripts/verify-all-backend.mjs
 
-# Full security regression suite (72 checks)
+# Full security regression suite
 npm test
 ```
 
@@ -142,15 +142,36 @@ npm test
 
 See [SECURITY.md](SECURITY.md). Copy `.env.example` to `.env` to configure. Run `npm test` for the security regression suite. Deploy behind a TLS-terminating proxy with `TRUST_PROXY=1`, `FORCE_HTTPS=1` and `PUBLIC_HOST` set.
 
-## Scope (this slice)
+## Scope and result storage
 
-This is the presentation layer plus a verification-harness backend. Detection in this slice is a simulated/deterministic engine, not a live network scanner. The following are explicit non-goals:
+Real HTTP/TLS observations are implemented; reputation is limited to deterministic URL patterns. No live threat-provider, page-content, malware sandbox, vulnerability scan, CT or revocation checks are performed. An incomplete network assessment returns `unknown`. API values `safe`/`suspicious`/`malicious` are legacy score bands, not confirmed safety/threat findings.
 
-- Real-time network scanning or blocking
-- Live certificate-authority integration
-- User accounts, authentication, or payments
-- Multi-tenancy
+SQLite stores origins (not full URL paths/queries), scores, checks, UUIDs and timestamps. Reports publish origins only. Anyone with a scan UUID can retrieve it. Retention is 30 days (hourly cleanup may lag) and at most 10,000 records/table. Existing URL data is scrubbed in a one-time migration; old duplicates/expired records are removed. Back up existing data before deploying. SQLite is not encrypted; use encrypted infrastructure and backups.
+
+The scanner admits 10 jobs/process, with default per-IP limits of 120 requests/minute and 15 scan/report submissions/minute. These are controls, not measured production capacity. See the audit and `node scripts/capacity-tests.mjs` for a local overload test.
 
 ## License
 
 Private project — not licensed for public reuse.
+
+## Updating a local checkout and diagnosing GitHub scans
+
+Stop the old server first, then run these from the repository directory:
+
+```bash
+git pull --ff-only origin main
+npm ci
+npm start
+```
+
+The production frontend is committed in `public/`. Hard-refresh your browser after restarting. `/api/health` should include `scannerVersion: "heuristic-v2-redirects"`; if missing, an old server is still running. If editing frontend source, run `npm run build` from the root before starting. This installs client build dependencies and rebuilds the served assets.
+
+If GitHub still cannot be assessed:
+
+```bash
+npm run diagnose -- https://github.com/
+```
+
+This checks the network used by Node.js on your computer. DNS, VPN, firewall/antivirus and proxy-only networks can block the backend even when the browser works. The tool prints classified failures and does not claim an unreachable site lacks HTTPS. It does not change your firewall or DNS. The scanner follows up to three validated HTTP redirects, checks every destination for SSRF, and never treats failed checks as proof of safety.
+
+Result-rendering regression: `npm run test:render --prefix client` (requires client dependencies).

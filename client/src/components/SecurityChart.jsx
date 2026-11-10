@@ -9,7 +9,7 @@ const VERDICT_THEMES = {
     color: '#22c55e',
     glowColor: 'rgba(34, 197, 94, 0.75)',
     bgGradient: '#22c55e',
-    title: 'Verified Safe',
+    title: 'Lower risk signals',
     riskText: 'Low Risk',
     badgeClass: 'badge--safe',
     icon: ShieldCheck,
@@ -20,7 +20,7 @@ const VERDICT_THEMES = {
     color: '#f59e0b',
     glowColor: 'rgba(245, 158, 11, 0.75)',
     bgGradient: '#f59e0b',
-    title: 'Suspicious Activity',
+    title: 'Elevated risk signals',
     riskText: 'Elevated Risk',
     badgeClass: 'badge--suspicious',
     icon: AlertTriangle,
@@ -31,7 +31,7 @@ const VERDICT_THEMES = {
     color: '#ef4444',
     glowColor: 'rgba(239, 68, 68, 0.85)',
     bgGradient: '#ef4444',
-    title: 'Critical Threat',
+    title: 'High risk signals',
     riskText: 'Severe Risk',
     badgeClass: 'badge--malicious',
     icon: ShieldAlert,
@@ -53,84 +53,28 @@ const VERDICT_THEMES = {
 
 export default function SecurityChart({ result }) {
   const verdict = result?.verdict || 'standby';
-  const theme = VERDICT_THEMES[verdict] || VERDICT_THEMES.standby;
+  const theme = verdict === 'unknown' ? { ...VERDICT_THEMES.suspicious, title: 'Inconclusive', riskText: 'Checks incomplete' } : VERDICT_THEMES[verdict] || VERDICT_THEMES.standby;
   const IconComponent = theme.icon;
 
+  // Only graph actual risk-index contributions; never manufacture per-check safety scores.
   const chartData = useMemo(() => {
-    if (!result) {
-      return [
-        { stage: 'DNS & Host', score: 85, detail: 'Syntax & format verification' },
-        { stage: 'Reputation', score: 90, detail: 'Known threat databases' },
-        { stage: 'TLS / SSL', score: 95, detail: 'Cryptographic handshake' },
-        { stage: 'Headers', score: 75, detail: 'Security policy compliance' },
-        { stage: 'Threat Feed', score: 98, detail: 'Community threat network' },
-        { stage: 'Trust Index', score: 92, detail: 'Composite safety score' },
-      ];
-    }
-
-    const { score = 0, checks = {} } = result;
-    const repOk = checks.reputation?.status === 'ok';
-    const repWarn = checks.reputation?.status === 'warn';
-    const repScore = repOk ? 95 : repWarn ? 55 : 20;
-
-    const certOk = checks.certificate?.status === 'ok';
-    const certWarn = checks.certificate?.status === 'warn';
-    const certScore = certOk ? 98 : certWarn ? 60 : 25;
-
-    const headOk = checks.headers?.status === 'ok';
-    const headWarn = checks.headers?.status === 'warn';
-    const headScore = headOk ? 90 : headWarn ? 58 : 25;
-
-    const threatOk = checks.threat?.status === 'ok';
-    const threatWarn = checks.threat?.status === 'warn';
-    const threatScore = threatOk ? 98 : threatWarn ? 45 : 15;
-
-    const trustScore = Math.max(5, 100 - score);
-
+    if (!result) return [];
+    const { score, checks } = result;
+    const headers = checks.headers.status === 'bad' ? 15 : 0;
+    const certificate = checks.certificate.status === 'bad' ? 15 : 0;
+    const patterns = result.riskBreakdown?.urlPatterns ?? score - headers - certificate;
     return [
-      {
-        stage: 'DNS & Host',
-        score: Math.min(100, Math.max(20, trustScore + 8)),
-        detail: 'Domain syntax, IP host & punycode check',
-        status: repOk ? 'Passed' : 'Flagged',
-      },
-      {
-        stage: 'Reputation',
-        score: repScore,
-        detail: checks.reputation?.detail || 'Reputation signals check',
-        status: repOk ? 'Clean' : 'Warning',
-      },
-      {
-        stage: 'TLS / SSL',
-        score: certScore,
-        detail: checks.certificate?.detail || 'TLS certificate validation',
-        status: certOk ? 'Valid' : 'Invalid',
-      },
-      {
-        stage: 'Headers',
-        score: headScore,
-        detail: checks.headers?.detail || 'HTTP security configuration',
-        status: headOk ? 'Secure' : 'Review',
-      },
-      {
-        stage: 'Threat Feed',
-        score: threatScore,
-        detail: checks.threat?.detail || 'Community reports match',
-        status: threatOk ? '0 Reports' : 'Flagged',
-      },
-      {
-        stage: 'Trust Index',
-        score: trustScore,
-        detail: `Final composite trust index (${trustScore}/100)`,
-        status: verdict.toUpperCase(),
-      },
+      { stage: 'URL patterns', score: patterns, detail: checks.reputation.detail, status: 'Heuristic points' },
+      { stage: 'Headers', score: headers, detail: checks.headers.detail, status: checks.headers.completed ? 'Observed points' : 'Not assessed' },
+      { stage: 'TLS', score: certificate, detail: checks.certificate.detail, status: checks.certificate.completed ? 'Observed points' : 'Not assessed' },
+      { stage: 'Combined risk', score, detail: 'Sum capped at 100. Not a probability. Missing checks do not count as passed.', status: result.assessment },
     ];
-  }, [result, verdict]);
+  }, [result]);
 
   const chartConfig = useMemo(
     () => ({
       score: {
-        label: 'Security Index',
+        label: 'Risk points',
         color: theme.color,
       },
     }),
@@ -156,7 +100,7 @@ export default function SecurityChart({ result }) {
               {data.score}
               <span className="security-tooltip-denom">/100</span>
             </span>
-            <span className="security-tooltip-label">Safety Rating</span>
+            <span className="security-tooltip-label">Risk points</span>
           </div>
           <div className="security-tooltip-desc">{data.detail}</div>
         </div>
@@ -165,8 +109,8 @@ export default function SecurityChart({ result }) {
     return null;
   };
 
-  const currentScore = result ? Math.max(5, 100 - result.score) : 92;
-  const threatRiskVal = result ? result.score : 8;
+  const currentScore = result ? result.score : '—';
+  const threatRiskVal = result ? result.score : '—';
 
   return (
     <Card className="security-chart-container">
@@ -176,7 +120,7 @@ export default function SecurityChart({ result }) {
           <div className="security-chart-titles">
             <div className="security-chart-eyebrow">
               <Activity className="w-3.5 h-3.5" style={{ color: theme.color }} />
-              <span>Multi-Vector Security Trajectory</span>
+              <span>Heuristic risk breakdown</span>
             </div>
             <div className="security-chart-main-row">
               <span className="security-chart-big-number font-great-day" style={{ color: theme.color }}>
@@ -204,15 +148,15 @@ export default function SecurityChart({ result }) {
         {/* Diagnostic Check Summary Row */}
         <div className="security-chart-stats-row">
           <div className="security-stat-col">
-            <span className="security-stat-key">Reputation</span>
+            <span className="security-stat-key">URL patterns</span>
             <span className="security-stat-val" style={{ color: result?.checks?.reputation?.status === 'ok' ? '#22c55e' : theme.color }}>
-              {result?.checks?.reputation?.status === 'ok' ? 'Clean' : result ? 'Alert' : 'Verified'}
+              {result?.checks?.reputation?.status === 'ok' ? 'Low signals' : result ? 'Review' : 'Not checked'}
             </span>
           </div>
           <div className="security-stat-col">
             <span className="security-stat-key">SSL / TLS</span>
             <span className="security-stat-val" style={{ color: result?.checks?.certificate?.status === 'ok' ? '#22c55e' : theme.color }}>
-              {result?.checks?.certificate?.info?.issuer ? "Let's Encrypt" : result ? 'Warning' : 'Valid'}
+              {result?.checks?.certificate?.info?.issuer || 'Not checked'}
             </span>
           </div>
           <div className="security-stat-col">
@@ -223,9 +167,9 @@ export default function SecurityChart({ result }) {
             </span>
           </div>
           <div className="security-stat-col">
-            <span className="security-stat-key">Threat Intel</span>
+            <span className="security-stat-key">Reports</span>
             <span className="security-stat-val" style={{ color: result?.checks?.threat?.status === 'ok' ? '#22c55e' : theme.color }}>
-              {result?.checks?.threat?.status === 'ok' ? '0 Reports' : result ? 'Flagged' : '0 Reports'}
+              {result ? `${result.checks.threat.count ?? 0} unverified` : 'Not checked'}
             </span>
           </div>
         </div>
@@ -279,7 +223,7 @@ export default function SecurityChart({ result }) {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: 'rgba(255, 255, 255, 0.45)' }}
-                tickFormatter={(v) => `${v}%`}
+                tickFormatter={(v) => `${v}`}
                 tickMargin={10}
                 ticks={[0, 25, 50, 75, 100]}
               />
@@ -305,6 +249,7 @@ export default function SecurityChart({ result }) {
                 filter="url(#securityLineGlow)"
                 dot={(props) => {
                   const { cx, cy } = props;
+                  if (cx == null || cy == null) return null;
                   return (
                     <circle
                       key={`dot-${props.index}`}

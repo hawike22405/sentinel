@@ -3,10 +3,10 @@
 import { Renderer, Program, Mesh, Triangle, Plane, Texture, RenderTarget } from 'ogl';
 
 const CARDS = [
-  { n: '01', title: 'Certificate validation', lines: ['TLS chain, expiry, transparency logs,', 'and cryptographic strength. Weak', 'certificates undermine the trust', 'indicator.'] },
-  { n: '02', title: 'Web security', lines: ['HTTP security headers, exposed', 'services, and software freshness \u2014', 'weak configurations raise the risk', 'score.'] },
-  { n: '03', title: 'Threat analysis', lines: ['Known-bad lists, reputation signals,', 'and suspicious patterns such as', 'look-alike domains and credential-', 'harvesting keywords.'] },
-  { n: '04', title: 'Threat intelligence', lines: ['Community-reported threats with', 'source and date, so newly spotted', 'phishing pages are flagged faster', 'than any single list.'] }
+  { n: '01', title: 'Certificate validation', lines: ['TLS hostname, chain and validity;', 'available public-key size.', 'No transparency, revocation', 'or CA key-generation audit.'] },
+  { n: '02', title: 'Web security', lines: ['HTTP response and security-header', 'presence checks; up to three', 'validated redirects. No port', 'or vulnerability scanning.'] },
+  { n: '03', title: 'Threat analysis', lines: ['URL-pattern heuristics: HTTP,', 'IP hosts, punycode and keywords.', 'No live blocklist lookup or', 'page-content malware analysis.'] },
+  { n: '04', title: 'Community reports', lines: ['Unverified reports with date', 'and source. Repeated reports', 'are deduplicated. Reports do', 'not change the risk score.'] }
 ];
 
 const CW = 640, CH = 400; // card artwork size

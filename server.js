@@ -9,7 +9,7 @@ import { closeStore } from './src/store.js';
 import { logSecurity } from './src/security-log.js';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = process.env.PORT === '0' ? 0 : Number(process.env.PORT) || 3000;
 const FORCE_HTTPS = process.env.FORCE_HTTPS === '1';
 const PUBLIC_HOST = process.env.PUBLIC_HOST;
 
@@ -86,7 +86,9 @@ app.use(express.json({ limit: '16kb', type: 'application/json' }));
 app.use(routes);
 
 // 23. Serve ONLY the public frontend (React build); never the repo root.
-app.use(express.static(join(ROOT, 'public'), { dotfiles: 'deny' }));
+app.use(express.static(join(ROOT, 'public'), { dotfiles: 'deny', setHeaders: (res, file) => {
+  if (file.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+} }));
 app.get('/', (_req, res) => res.sendFile(join(ROOT, 'public', 'index.html')));
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found.' }));
@@ -106,7 +108,7 @@ app.use((err, req, res, _next) => {
 });
 
 const server = app.listen(PORT, () => {
-  console.log(`Sentinel backend listening on http://localhost:${PORT}`);
+  console.log(`Sentinel backend listening on http://localhost:${server.address().port}`);
 });
 
 const shutdown = () => {

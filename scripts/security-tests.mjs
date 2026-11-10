@@ -79,11 +79,11 @@ check('404 is JSON with no internals', r.status === 404 && nf.includes('Not foun
 console.log('\n# 7/10 XSS + SQL injection');
 r = await post(s, '/api/feed/report', { url: `https://x.example/<script>alert(1)</script>?q=' OR 1=1;--`, type: 'phishing' });
 const x = await r.json();
-check('script tags are percent-encoded in stored URL', r.status === 201 && !x.url.includes('<script>'), x.url);
+check('sensitive URL path and query are not published', r.status === 201 && x.url === 'https://x.example/', x.url);
 r = await post(s, '/api/feed/report', { url: `https://x.example/'); DROP TABLE reports;--`, type: 'phishing' });
 r = await fetch(s.base + '/api/feed');
 const feed = await r.json();
-check('SQL injection payload stored literally; tables intact', r.status === 200 && Array.isArray(feed.reports) && feed.reports.length >= 2);
+check('duplicate report rejected; SQL payload cannot damage tables', r.status === 200 && Array.isArray(feed.reports) && feed.reports.length === 1);
 const csp = (await fetch(s.base + '/')).headers.get('content-security-policy') || '';
 check("CSP forbids inline/eval scripts (no 'unsafe-inline'/'unsafe-eval')", /script-src 'self'/.test(csp) && !/unsafe-/.test(csp));
 
@@ -109,7 +109,7 @@ const idx = await (await fetch(s.base + '/')).text();
 check('frontend still served (React app with root div)', (await fetch(s.base + '/')).status === 200 && idx.includes('id="root"'));
 
 console.log('\n# 26 SSRF / abuse of the scanner');
-for (const u of ['http://localhost/', 'http://127.0.0.1/', 'http://[::1]/', 'http://[::ffff:127.0.0.1]/', 'http://169.254.169.254/latest/meta-data/', 'http://10.0.0.1/', 'http://192.168.1.1/', 'http://172.16.0.1/', 'http://2130706433/', 'http://0x7f.1/', 'http://foo.localhost/']) {
+for (const u of ['http://localhost/', 'http://127.0.0.1/', 'http://[::1]/', 'http://[::ffff:127.0.0.1]/', 'http://169.254.169.254/latest/meta-data/', 'http://10.0.0.1/', 'http://192.168.1.1/', 'http://172.16.0.1/', 'http://2130706433/', 'http://0x7f.1/', 'http://foo.localhost/', 'http://localhost./', 'http://[64:ff9b::a00:1]/', 'http://[2002:7f00:1::]/', 'http://192.0.2.1/']) {
   r = await post(s, '/api/scan', { url: u });
   check(`scan blocks ${u}`, r.status === 422, String(r.status));
 }

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { randomUUID, createHash, timingSafeEqual } from 'node:crypto';
-import { createScan, getScanById, createReport, deleteReport, listReports, countReportsForHost } from './store.js';
+import { createScan, getScanById, createReport, deleteReport, listReports, countReportsForHost, storageUrl } from './store.js';
 import { scan, validateUrl } from './detector.js';
 import { logSecurity } from './security-log.js';
 
@@ -27,7 +27,7 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-router.get('/api/health', (_req, res) => res.json({ ok: true, service: 'sentinel' }));
+router.get('/api/health', (_req, res) => res.json({ ok: true, service: 'sentinel', scannerVersion: 'heuristic-v2-redirects', scanTimeoutMs: 15000 }));
 
 router.post('/api/scan', async (req, res, next) => {
   try {
@@ -37,7 +37,7 @@ router.post('/api/scan', async (req, res, next) => {
 
     const validated = validateUrl(url.trim());
     if (!validated.ok) {
-      logSecurity(isBlockedTarget(validated.error) ? 'ssrf_blocked' : 'invalid_url', { ip: req.ip, url: url.slice(0, 200) });
+      logSecurity(isBlockedTarget(validated.error) ? 'ssrf_blocked' : 'invalid_url', { ip: req.ip, url });
       return res.status(422).json({ error: validated.error });
     }
 
@@ -53,13 +53,13 @@ router.post('/api/scan', async (req, res, next) => {
       inFlight -= 1;
     }
     if (result.error) {
-      if (isBlockedTarget(result.error)) logSecurity('ssrf_blocked', { ip: req.ip, url: url.slice(0, 200) });
+      if (isBlockedTarget(result.error)) logSecurity('ssrf_blocked', { ip: req.ip, url });
       return res.status(422).json({ error: result.error });
     }
 
     const id = randomUUID();
-    createScan({ id, url: validated.url.href, score: result.score, verdict: result.verdict, details: { checks: result.checks, reasons: result.reasons } });
-    res.json({ id, url: validated.url.href, score: result.score, verdict: result.verdict, checks: result.checks, created_at: new Date().toISOString() });
+    createScan({ id, url: validated.url.href, score: result.score, verdict: result.verdict, details: result });
+    res.json({ ...result, id, url: storageUrl(validated.url), created_at: new Date().toISOString() });
   } catch (err) {
     next(err);
   }
@@ -86,12 +86,13 @@ router.post('/api/feed/report', (req, res, next) => {
     if (!REPORT_TYPES.includes(type)) return res.status(422).json({ error: 'Report type must be one of: ' + REPORT_TYPES.join(', ') + '.' });
     const validated = validateUrl(url.trim());
     if (!validated.ok) {
-      logSecurity('invalid_url', { ip: req.ip, url: url.slice(0, 200), via: 'report' });
+      logSecurity('invalid_url', { ip: req.ip, url, via: 'report' });
       return res.status(422).json({ error: validated.error });
     }
     const id = randomUUID();
-    createReport({ id, url: validated.url.href, type, source: 'user-report' }); // never trust a client-supplied source
-    res.status(201).json({ id, url: validated.url.href, type, source: 'user-report' });
+    const inserted = createReport({ id, url: validated.url.href, type, source: 'user-report' }); // never trust a client-supplied source
+    if (!inserted) return res.status(409).json({ error: 'This host and report type have already been reported.' });
+    res.status(201).json({ id, url: storageUrl(validated.url), type, source: 'user-report', verified: false });
   } catch (err) {
     next(err);
   }

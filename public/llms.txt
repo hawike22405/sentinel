@@ -1,0 +1,5 @@
+# Sentinel documentation
+
+Limited HTTP/TLS and URL-pattern risk assessment. Not a safety guarantee or malware sandbox.
+Source and documentation: https://github.com/hawike22405/sentinel
+Security audit: https://github.com/hawike22405/sentinel/blob/main/docs/security-audit.md

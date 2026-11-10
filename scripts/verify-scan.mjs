@@ -49,7 +49,7 @@ function post(path, body) {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(data),
         },
-        timeout: 10000,
+        timeout: 16000,
       },
       (res) => {
         let out = '';
@@ -141,7 +141,7 @@ let reqDestroy = () => {};
         console.log(`FAIL  score out of range: ${body.score}`);
         failures += 1;
       } else if (
-        !['safe', 'suspicious', 'malicious'].includes(body.verdict)
+        !['safe', 'suspicious', 'malicious', 'unknown'].includes(body.verdict)
       ) {
         console.log(`FAIL  invalid verdict: ${body.verdict}`);
         failures += 1;

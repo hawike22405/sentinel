@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
 import SecurityChart from './SecurityChart';
 
+const verdictLabels = { safe: 'Lower risk', suspicious: 'Elevated risk', malicious: 'High risk', unknown: 'Inconclusive' };
+
 const badgeMap = {
+  unknown: 'badge--suspicious',
   safe: 'badge--safe',
   suspicious: 'badge--suspicious',
   malicious: 'badge--malicious',
@@ -74,13 +77,14 @@ export default function ScanResult({ result }) {
       const rotateDeg = 45 + (score / 100) * 180;
       needleRef.current.style.transform = `translate(-50%, -100%) rotate(${rotateDeg}deg)`;
     }
-    const verdictLabel = verdict.charAt(0).toUpperCase() + verdict.slice(1);
+    const verdictLabel = verdictLabels[verdict] || 'Inconclusive';
     if (verdictRef.current) {
       verdictRef.current.textContent = verdictLabel;
       verdictRef.current.className = 'badge ' + badge;
     }
-    const firstDetail =
-      (checks && checks.reputation && checks.reputation.detail) || '';
+    const firstDetail = verdict === 'unknown'
+      ? (checks.headers?.detail || 'The backend could not complete its network checks.')
+      : checks.reputation?.detail || '';
     if (explanationRef.current) {
       explanationRef.current.textContent =
         verdictLabel +
@@ -91,7 +95,7 @@ export default function ScanResult({ result }) {
     renderCheck(
       checkRefs.reputation,
       checks.reputation.status,
-      'Reputation',
+      'URL heuristics',
       checks.reputation.detail,
     );
     renderCheck(
@@ -109,7 +113,7 @@ export default function ScanResult({ result }) {
     renderCheck(
       checkRefs.threat,
       checks.threat.status,
-      'Threat intelligence',
+      'Community reports',
       checks.threat.detail,
     );
 
@@ -149,12 +153,13 @@ export default function ScanResult({ result }) {
           <p id="result-explanation" ref={explanationRef}>
             Enter a URL above to run a live scan and see the verdict.
           </p>
+          <p className="meta">Heuristic risk index, not a probability or safety guarantee. No page-content, malware, live blocklist, certificate transparency or revocation checks are performed.</p>
           <div className="check check--ok" ref={checkRefs.reputation} id="check-reputation">
             <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               {iconPaths.reputation}
             </svg>
             <div className="text">
-              <strong>Reputation</strong>
+              <strong>URL heuristics</strong>
               <span>—</span>
             </div>
           </div>
@@ -181,10 +186,11 @@ export default function ScanResult({ result }) {
               {iconPaths.threat}
             </svg>
             <div className="text">
-              <strong>Threat intelligence</strong>
+              <strong>Community reports</strong>
               <span>—</span>
             </div>
           </div>
+          {result?.inspectedOrigin && <p className="meta">Inspected destination: {result.inspectedOrigin}{result.redirects?.length ? ` (${result.redirects.length} redirect(s) followed)` : ''}</p>}
           <div className="cert-panel mt-6">
             <h3>Certificate details</h3>
             <div className="field">
@@ -219,7 +225,7 @@ export default function ScanResult({ result }) {
 
   const { score, verdict, checks } = result;
   const badge = badgeMap[verdict] || 'badge--suspicious';
-  const verdictLabel = verdict.charAt(0).toUpperCase() + verdict.slice(1);
+  const verdictLabel = verdictLabels[verdict] || 'Inconclusive';
 
   return (
     <section className="section section--short" id="scan" aria-labelledby="scan-h">
@@ -236,15 +242,15 @@ export default function ScanResult({ result }) {
           </h2>
           <p id="result-explanation" ref={explanationRef}>
             {verdictLabel} &mdash;{' '}
-            {(checks.reputation && checks.reputation.detail) ||
-              'No strong risk signals detected.'}
+            {verdict === 'unknown' ? checks.headers.detail : checks.reputation.detail}
           </p>
+          <p className="meta">Heuristic risk index, not a probability or safety guarantee. No page-content, malware, live blocklist, certificate transparency or revocation checks are performed.</p>
           <div className="check check--ok" ref={checkRefs.reputation} id="check-reputation">
             <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               {iconPaths.reputation}
             </svg>
             <div className="text">
-              <strong>Reputation</strong>
+              <strong>URL heuristics</strong>
               <span>{checks.reputation.detail}</span>
             </div>
           </div>
@@ -271,38 +277,39 @@ export default function ScanResult({ result }) {
               {iconPaths.threat}
             </svg>
             <div className="text">
-              <strong>Threat intelligence</strong>
+              <strong>Community reports</strong>
               <span>{checks.threat.detail}</span>
             </div>
           </div>
+          {result?.inspectedOrigin && <p className="meta">Inspected destination: {result.inspectedOrigin}{result.redirects?.length ? ` (${result.redirects.length} redirect(s) followed)` : ''}</p>}
           <div className="cert-panel mt-6">
             <h3>Certificate details</h3>
             <div className="field">
               <span className="key">Issuer</span>
               <span className="val mono" id="cert-issuer">
-                {checks.certificate.info?.issuer || 'Not scanned'}
+                {checks.certificate.info?.issuer || 'Not checked'}
               </span>
             </div>
             <div className="field">
               <span className="key">Expires</span>
               <span className="val mono" id="cert-expires">
-                {checks.certificate.info?.expires || 'Not scanned'}
+                {checks.certificate.info?.expires || 'Not checked'}
               </span>
             </div>
             <div className="field">
               <span className="key">Chain</span>
               <span className="val mono" style={{ color: 'var(--color-warning)' }} id="cert-chain">
-                {checks.certificate.info?.chain || 'Not scanned'}
+                {checks.certificate.info?.chain || 'Not checked'}
               </span>
             </div>
             <div className="field">
               <span className="key">Transparency log</span>
-              <span className="val mono">{checks.certificate.info?.transparencyLog || 'Not scanned'}</span>
+              <span className="val mono">{checks.certificate.info?.transparencyLog || 'Not checked'}</span>
             </div>
             <div className="field">
               <span className="key">Fingerprint (SHA-256)</span>
               <span className="val mono cert-fp" id="cert-fingerprint">
-                {checks.certificate.info?.fingerprint || 'Not scanned'}
+                {checks.certificate.info?.fingerprint || 'Not checked'}
               </span>
             </div>
           </div>
