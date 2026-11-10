@@ -65,3 +65,9 @@
 - Added three-hop validated redirect handling, DNS/connection error classification, a 15-second scan deadline, local diagnose command, health scanner-version marker, frontend stale-backend guard, HTML revalidation and check-label spacing.
 - Real network evidence in this runtime: direct Node DNS unavailable while proxy-backed curl reached GitHub. This is not evidence of the user's local network configuration.
 - Validation: detector/storage and HTTP security/overload tests, production build, result SSR rendering, and repository checks. Update local checkout and restart to receive committed frontend/backend changes.
+
+
+## Animated carousel font — 10 November 2026
+- Card headings were isolated SVG image text and could not inherit the page's Great Day font. Verified the uploaded regular/bold font bytes match the existing bundled files.
+- Draw headings into the WebGL card texture with the loaded bold --font-display face. Fit script flourishes and add heading/body spacing. Existing lens shaders, dragging, resizing and animation remain unchanged; disposed mounts cannot update textures after font loading.
+- Validation: native canvas artwork preview with the supplied bold font, production React build and full frontend repository verifier. Full browser animation was not exercised in this runtime.

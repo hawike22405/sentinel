@@ -11,15 +11,35 @@ const CARDS = [
 
 const CW = 640, CH = 400; // card artwork size
 const cardSvg = c => {
-  const body = c.lines.map((l, i) => `<text x="48" y="${200 + i * 36}" fill="#8b8b94" font-size="24">${l}</text>`).join('');
+  const body = c.lines.map((l, i) => `<text x="48" y="${216 + i * 36}" fill="#8b8b94" font-size="24">${l}</text>`).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${CW}" height="${CH}" font-family="Inter,Segoe UI,Arial,sans-serif">
 <rect width="${CW}" height="${CH}" rx="28" fill="#0c0d10"/><rect x="1" y="1" width="${CW - 2}" height="${CH - 2}" rx="27" fill="none" stroke="#ffffff" stroke-opacity=".1" stroke-width="2"/>
 <rect x="48" y="44" width="64" height="64" rx="16" fill="#15161a" stroke="#ffffff" stroke-opacity=".1"/>
 <circle cx="80" cy="76" r="14" fill="none" stroke="#fff" stroke-width="2.5"/><path d="M73 76l5 5 9-10" fill="none" stroke="#fff" stroke-width="2.5"/>
 <text x="${CW - 48}" y="88" text-anchor="end" fill="#6366f1" font-size="30" font-weight="700" font-family="'Great Day', Inter, Segoe UI, Arial, sans-serif">${c.n}</text>
-<text x="48" y="160" fill="#fff" font-size="36" font-weight="700" font-family="'Great Day', Inter, Segoe UI, Arial, sans-serif">${c.title}</text>${body}</svg>`;
+${body}</svg>`;
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 };
+
+// SVG images used as WebGL textures cannot inherit the document's @font-face.
+// Draw the heading with the loaded page font, retaining the existing card artwork.
+function cardTexture(image, title, fontFamily) {
+  const canvas = document.createElement('canvas');
+  canvas.width = CW;
+  canvas.height = CH;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(image, 0, 0, CW, CH);
+  let fontSize = 48;
+  ctx.font = `700 ${fontSize}px ${fontFamily}`;
+  // Leave room for script flourishes without stretching the glyphs horizontally.
+  const measured = ctx.measureText(title);
+  const width = Math.max(measured.width, (measured.actualBoundingBoxLeft || 0) + (measured.actualBoundingBoxRight || 0));
+  if (width > CW - 112) fontSize *= (CW - 112) / width;
+  ctx.font = `700 ${fontSize}px ${fontFamily}`;
+  ctx.fillStyle = 'white';
+  ctx.fillText(title, 56, 172);
+  return canvas;
+}
 
 const cardVS = `#version 300 es
 in vec3 position; in vec2 uv;
@@ -96,11 +116,24 @@ export function mountChecksCarousel(container, { cardHeight = 0.55, gap = 24, au
   const lensU = { tScene: { value: target.texture }, uResolution: { value: [1, 1] }, uDpr: { value: 1 }, uCenter: { value: [0, 0] }, uHalf: { value: [1, 1] }, uAngle: { value: (62 * Math.PI) / 180 }, uInner: { value: 1 }, uOuter: { value: 1 }, uFlow: { value: 0 } };
   const lensMesh = new Mesh(gl, { geometry: new Triangle(gl), program: new Program(gl, { vertex: lensVS, fragment: lensFS, uniforms: lensU, depthTest: false, depthWrite: false }) });
 
+  let disposed = false;
+  const headingFamily = getComputedStyle(container).getPropertyValue('--font-display').trim() || "'Great Day', cursive";
+  // Load the bold face before rasterizing, so fallback glyphs are never baked in
+  // simply because the texture image finishes loading before the font.
+  const headingReady = document.fonts.load(`700 48px ${headingFamily}`, CARDS.map(c => c.title).join(' '));
+  headingReady.catch(() => {}); // handled per image below
   const slots = CARDS.map(c => {
     const texture = new Texture(gl, { generateMipmaps: true, minFilter: gl.LINEAR_MIPMAP_LINEAR, magFilter: gl.LINEAR });
     const slot = { texture, loaded: false };
     const img = new Image();
-    img.onload = () => { texture.image = img; texture.update(); slot.loaded = true; };
+    img.onload = async () => {
+      try { await headingReady; }
+      catch { console.warn('Sentinel: carousel heading font could not be loaded.'); }
+      if (disposed) return;
+      texture.image = cardTexture(img, c.title, headingFamily);
+      texture.update();
+      slot.loaded = true;
+    };
     img.src = cardSvg(c);
     return slot;
   });
@@ -194,7 +227,7 @@ export function mountChecksCarousel(container, { cardHeight = 0.55, gap = 24, au
   resize(); last = performance.now(); raf = requestAnimationFrame(frame);
 
   return () => {
-    visible = false; cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); offs.forEach(f => f());
+    disposed = true; visible = false; cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); offs.forEach(f => f());
     gl.getExtension('WEBGL_lose_context')?.loseContext(); canvas.remove();
   };
 }
