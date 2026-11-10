@@ -175,3 +175,14 @@ npm run diagnose -- https://github.com/
 This checks the network used by Node.js on your computer. DNS, VPN, firewall/antivirus and proxy-only networks can block the backend even when the browser works. The tool prints classified failures and does not claim an unreachable site lacks HTTPS. It does not change your firewall or DNS. The scanner follows up to three validated HTTP redirects, checks every destination for SSRF, and never treats failed checks as proof of safety.
 
 Result-rendering regression: `npm run test:render --prefix client` (requires client dependencies).
+
+
+### New frontend connected to an old running backend
+
+Pulling source files does not restart an already-running Node process. Express can serve the newly updated frontend files from disk while its API modules are still the old loaded version. A second start on the same port then fails with EADDRINUSE. Stop the previous server in its terminal with Ctrl+C and restart, or run a fresh instance on another port:
+
+```bash
+PORT=3001 npm start
+```
+
+Open **http://localhost:3001**, not the old port. `/api/health` on that same address should report `scannerVersion: "heuristic-v2-redirects"`. The frontend intentionally rejects old API responses instead of displaying an unreliable Safe result. The startup callback now handles Express 5 bind errors before accessing the server address.

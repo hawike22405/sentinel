@@ -71,3 +71,9 @@
 - Card headings were isolated SVG image text and could not inherit the page's Great Day font. Verified the uploaded regular/bold font bytes match the existing bundled files.
 - Draw headings into the WebGL card texture with the loaded bold --font-display face. Fit script flourishes and add heading/body spacing. Existing lens shaders, dragging, resizing and animation remain unchanged; disposed mounts cannot update textures after font loading.
 - Validation: native canvas artwork preview with the supplied bold font, production React build and full frontend repository verifier. Full browser animation was not exercised in this runtime.
+
+
+## Local startup / stale backend follow-up — 10 November 2026
+- Express 5 calls the listen callback on bind errors; the earlier port log dereferenced null before handling the error. Added explicit failure handling, cleanup and a useful EADDRINUSE message.
+- Verified with a real occupied-port fixture and a fresh isolated server that the current health/scan API satisfies the frontend version guard. Pulling frontend files without restarting an old API process explains the observed mismatch; the user's exact listener PID has not been inspected.
+- Added startup regressions to npm test, clarified the stale-backend UI message and documented starting on port 3001 and opening that exact URL.

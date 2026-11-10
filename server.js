@@ -107,7 +107,19 @@ app.use((err, req, res, _next) => {
   res.status(500).json({ error: 'Internal server error.' });
 });
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, (err) => {
+  // Express 5 also invokes this callback when binding fails. Do not read
+  // server.address() until startup succeeds; it is null on a bind error.
+  if (err) {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Sentinel could not start: port ${PORT} is already in use. Stop the previous Sentinel process, or start with PORT=3001 npm start and open http://localhost:3001.`);
+    } else {
+      console.error(`Sentinel could not start (${err.code || 'LISTEN_ERROR'}). Check the configured port and network permissions.`);
+    }
+    closeStore();
+    process.exitCode = 1;
+    return;
+  }
   console.log(`Sentinel backend listening on http://localhost:${server.address().port}`);
 });
 
