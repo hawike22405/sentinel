@@ -84,3 +84,10 @@
 - Integrated with navigation (in-page #hero link) and CurvedInput (real submit control, current URL and pending disabled state retained). Added an optional renderButton slot; other CurvedInput callers keep their existing control.
 - Pointer-driven CSS variables provide the flare without an idle RAF loop. Preserved keyboard focus, disabled/touch behavior, reduced-motion styling and responsive button sizing. Added editor alias mapping, a non-conflicting demo and optional shadcn/Tailwind/TypeScript setup instructions in docs/flame-button.md.
 - Validation: DOM interaction checks for submit URL, disabled state, pointer edge tracking and internal/external navigation; production build, existing result-render tests and full frontend verifier passed. Full visual browser rendering was not exercised in this runtime.
+
+
+## Vercel preparation — 10 November 2026
+- User requested Vercel deployment and confirmed connecting the Vercel plugin. Connection is confirmed installed, but no Vercel deployment operations were exposed in this tool session. No Vercel project/database/domain has been created or published here.
+- Prepared Express handler export without a cloud port listener, Node 24 configuration, public/CDN security headers, 30-second function budget, secret/source exclusions and hosted libSQL storage selection. Local SQLite compatibility retained. Cloud health checks storage; missing credentials fail closed.
+- Added async-safe API storage calls and hosted SQL contract/serverless import regressions. npm test passed 20 tests plus 76 security assertions and overload fixture; frontend build and verifier passed. Live hosted DB/deployment checks remain pending.
+- Deployment branch: deploy/vercel. Need actual Vercel project controls and hosted database provisioning/credentials before a successful URL can be reported. Browser fallback needs approval if the connected plugin remains inaccessible.

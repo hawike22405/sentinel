@@ -103,10 +103,15 @@ app.use((err, req, res, _next) => {
     logSecurity('body_too_large', { ip: req.ip, path: req.path });
     return res.status(413).json({ error: 'Request body is too large.' });
   }
-  console.error(err);
+  if (process.env.TURSO_DATABASE_URL) console.error('Request failed', { code: err.code || 'REQUEST_ERROR' });
+  else console.error(err);
   res.status(500).json({ error: 'Internal server error.' });
 });
 
+export default app;
+
+// Vercel imports the Express app as a Function. Only local/VM runs bind a port.
+if (!process.env.VERCEL) {
 const server = app.listen(PORT, (err) => {
   // Express 5 also invokes this callback when binding fails. Do not read
   // server.address() until startup succeeds; it is null on a bind error.
@@ -132,3 +137,5 @@ const shutdown = () => {
 };
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
+
+}
