@@ -4,7 +4,7 @@ import { Renderer, Program, Mesh, Triangle, Plane, Texture, RenderTarget } from 
 
 const CARDS = [
   { n: '01', title: 'Certificate validation', lines: ['TLS hostname, chain and validity;', 'available public-key size.', 'No transparency, revocation', 'or CA key-generation audit.'] },
-  { n: '02', title: 'Web security', lines: ['HTTP response and security-header', 'presence checks. No redirect,', 'exposed-service or application', 'vulnerability scanning.'] },
+  { n: '02', title: 'Web security', lines: ['HTTP response and security-header', 'presence checks; up to three', 'validated redirects. No port', 'or vulnerability scanning.'] },
   { n: '03', title: 'Threat analysis', lines: ['URL-pattern heuristics: HTTP,', 'IP hosts, punycode and keywords.', 'No live blocklist lookup or', 'page-content malware analysis.'] },
   { n: '04', title: 'Community reports', lines: ['Unverified reports with date', 'and source. Repeated reports', 'are deduplicated. Reports do', 'not change the risk score.'] }
 ];

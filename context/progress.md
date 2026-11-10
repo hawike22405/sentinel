@@ -58,3 +58,10 @@
 - Completed: real HTTP/TLS scanner audit, unknown verdict for incomplete evidence, honest risk labels/chart, issuer fix, DNS pinning/reserved-range controls, absolute network deadlines, anonymous-report score isolation/deduplication, origin-only storage migration/retention, patched frontend tooling and rebuilt public assets.
 - Validation: npm test (8 detector/storage tests, 76 security assertions, controlled overload fixture); React build; both repository verifiers; backend/client audits reported no known advisories. Browser launch was blocked by environment socket restrictions, so visual verification is pending.
 - Active limitations and next steps: docs/security-audit.md is the current capability/capacity/privacy reference. Threat-provider setup, isolated content/malware analysis, CT/revocation checks, accuracy evaluation and actual hosting/load validation remain necessary for the full product statement.
+
+
+## GitHub scan error follow-up — 10 November 2026
+- Screenshot matched old code; main still contained the pre-audit version, with PR #2 open/draft.
+- Added three-hop validated redirect handling, DNS/connection error classification, a 15-second scan deadline, local diagnose command, health scanner-version marker, frontend stale-backend guard, HTML revalidation and check-label spacing.
+- Real network evidence in this runtime: direct Node DNS unavailable while proxy-backed curl reached GitHub. This is not evidence of the user's local network configuration.
+- Validation: detector/storage and HTTP security/overload tests, production build, result SSR rendering, and repository checks. Update local checkout and restart to receive committed frontend/backend changes.

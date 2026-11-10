@@ -153,3 +153,25 @@ The scanner admits 10 jobs/process, with default per-IP limits of 120 requests/m
 ## License
 
 Private project — not licensed for public reuse.
+
+## Updating a local checkout and diagnosing GitHub scans
+
+Stop the old server first, then run these from the repository directory:
+
+```bash
+git pull --ff-only origin main
+npm ci
+npm start
+```
+
+The production frontend is committed in `public/`. Hard-refresh your browser after restarting. `/api/health` should include `scannerVersion: "heuristic-v2-redirects"`; if missing, an old server is still running. If editing frontend source, run `npm run build` from the root before starting. This installs client build dependencies and rebuilds the served assets.
+
+If GitHub still cannot be assessed:
+
+```bash
+npm run diagnose -- https://github.com/
+```
+
+This checks the network used by Node.js on your computer. DNS, VPN, firewall/antivirus and proxy-only networks can block the backend even when the browser works. The tool prints classified failures and does not claim an unreachable site lacks HTTPS. It does not change your firewall or DNS. The scanner follows up to three validated HTTP redirects, checks every destination for SSRF, and never treats failed checks as proof of safety.
+
+Result-rendering regression: `npm run test:render --prefix client` (requires client dependencies).

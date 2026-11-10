@@ -48,6 +48,9 @@ export default function Hero({ onScanComplete }) {
       if (!res.ok) {
         throw new Error(body.error || 'Scan failed.');
       }
+      if (!body.scoreVersion || !body.checks || !body.assessment) {
+        throw new Error('The scanner backend is outdated. Please update and restart Sentinel.');
+      }
       if (onScanComplete) {
         onScanComplete(body);
         setTimeout(() => {

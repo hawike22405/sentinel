@@ -86,7 +86,9 @@ app.use(express.json({ limit: '16kb', type: 'application/json' }));
 app.use(routes);
 
 // 23. Serve ONLY the public frontend (React build); never the repo root.
-app.use(express.static(join(ROOT, 'public'), { dotfiles: 'deny' }));
+app.use(express.static(join(ROOT, 'public'), { dotfiles: 'deny', setHeaders: (res, file) => {
+  if (file.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+} }));
 app.get('/', (_req, res) => res.sendFile(join(ROOT, 'public', 'index.html')));
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found.' }));

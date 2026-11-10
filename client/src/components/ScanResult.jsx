@@ -82,8 +82,9 @@ export default function ScanResult({ result }) {
       verdictRef.current.textContent = verdictLabel;
       verdictRef.current.className = 'badge ' + badge;
     }
-    const firstDetail =
-      (checks && checks.reputation && checks.reputation.detail) || '';
+    const firstDetail = verdict === 'unknown'
+      ? (checks.headers?.detail || 'The backend could not complete its network checks.')
+      : checks.reputation?.detail || '';
     if (explanationRef.current) {
       explanationRef.current.textContent =
         verdictLabel +
@@ -189,6 +190,7 @@ export default function ScanResult({ result }) {
               <span>—</span>
             </div>
           </div>
+          {result?.inspectedOrigin && <p className="meta">Inspected destination: {result.inspectedOrigin}{result.redirects?.length ? ` (${result.redirects.length} redirect(s) followed)` : ''}</p>}
           <div className="cert-panel mt-6">
             <h3>Certificate details</h3>
             <div className="field">
@@ -240,8 +242,7 @@ export default function ScanResult({ result }) {
           </h2>
           <p id="result-explanation" ref={explanationRef}>
             {verdictLabel} &mdash;{' '}
-            {(checks.reputation && checks.reputation.detail) ||
-              'No strong risk signals detected.'}
+            {verdict === 'unknown' ? checks.headers.detail : checks.reputation.detail}
           </p>
           <p className="meta">Heuristic risk index, not a probability or safety guarantee. No page-content, malware, live blocklist, certificate transparency or revocation checks are performed.</p>
           <div className="check check--ok" ref={checkRefs.reputation} id="check-reputation">
@@ -280,6 +281,7 @@ export default function ScanResult({ result }) {
               <span>{checks.threat.detail}</span>
             </div>
           </div>
+          {result?.inspectedOrigin && <p className="meta">Inspected destination: {result.inspectedOrigin}{result.redirects?.length ? ` (${result.redirects.length} redirect(s) followed)` : ''}</p>}
           <div className="cert-panel mt-6">
             <h3>Certificate details</h3>
             <div className="field">

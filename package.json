@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node --test scripts/detector-tests.mjs scripts/store-tests.mjs && node scripts/security-tests.mjs && node scripts/capacity-tests.mjs"
+    "test": "node --test scripts/detector-tests.mjs scripts/store-tests.mjs && node scripts/security-tests.mjs && node scripts/capacity-tests.mjs",
+    "diagnose": "node scripts/diagnose.mjs",
+    "build": "npm --prefix client ci --include=dev && npm run build --prefix client"
   },
   "keywords": [],
   "type": "module",

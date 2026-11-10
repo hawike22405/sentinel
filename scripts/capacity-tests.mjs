@@ -22,6 +22,8 @@ try {
       if (match) { clearTimeout(timer); resolve(`http://127.0.0.1:${match[1]}`); }
     });
   });
+  const health = await (await fetch(base + '/api/health')).json();
+  assert.equal(health.scannerVersion, 'heuristic-v2-redirects');
   const started = performance.now();
   const scans = Promise.all(Array.from({ length: 20 }, async (_, i) => {
     const res = await fetch(base + '/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: `https://fixture-${i}.example/private?token=do-not-store` }) });

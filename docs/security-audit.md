@@ -14,7 +14,7 @@ Previously, DNS/network failures could yield Safe, arbitrary UI values appeared 
 | --- | --- | --- |
 | URL threat analysis | HTTP vs HTTPS, IP hosts, hyphens, punycode, length, keyword and subdomain heuristics | Weak signals; legitimate login URLs and international domains can trigger them. No trained model, brand similarity, WHOIS/domain age, or reputation-provider lookup. |
 | Website security assessment | Live GET, capped response headers, status and presence of six security headers | No response body, JavaScript, forms, credential harvesting, application vulnerabilities, exposed ports or verified software version checks. Header values/policy effectiveness are not evaluated. |
-| Redirects | Recognised 3xx response; not followed; result Inconclusive | Destination and any later chain are unassessed. This avoids treating a redirector as the destination or following internal-network redirects. |
+| Redirects | Up to three HTTP redirects, with scheme/port/address validation and fresh DNS pinning at every hop; headers and TLS assessed at the final destination | Loops, disallowed destinations and HTTPS downgrade redirects stop the scan as incomplete. JavaScript/meta-refresh redirects are not followed. |
 | TLS certificate | Requested HTTPS port, hostname identity, Node/OpenSSL trust chain, validity dates, issuer, fingerprint, available leaf key size and negotiated protocol | No OCSP/CRL revocation, certificate transparency inclusion proof, CA key-generation/entropy audit, compromised-CA detection, full chain cryptographic-strength audit or exhaustive protocol/cipher enumeration. HTTP does not silently probe an unrelated 443 service. |
 | Collaborative intelligence | Timestamped local anonymous reports, one per hostname/type, delete moderation protected by admin token | Unverified, not an external intelligence network or corroborated evidence. Cannot change score; no Sybil-resistant identity or report approval workflow. |
 | Malware/phishing protection | Risk hints and community warnings | Does not download, execute, disinfect, block navigation, or protect an endpoint. No antivirus engine or sandbox. New or convincing phishing can be missed entirely. |
@@ -25,7 +25,7 @@ Cryptographic certificate failures like a CA's defective key generation cannot b
 
 URL-pattern weights: HTTP +30, IP host +25, hyphen +15, punycode +15, length over 75 +10, each matching keyword +10, four or more subdomain separators +10. URL subtotal capped at 100. Missing at least three of six headers adds 15 only on a successful HTTP response; an observed invalid certificate adds 15. Total capped at 100. Thresholds are 0–33, 34–66, 67–100. They are engineering choices and have not been calibrated against labelled threats. Anonymous reports add zero.
 
-A failed HTTP inspection, non-2xx response, redirect, or incomplete HTTPS certificate inspection gives Inconclusive regardless of score. Missing security headers alone do not prove phishing. A valid HTTPS certificate alone does not prove a business or page is legitimate. Certificate expiry under 30 days is a warning; short-lived certificates can be legitimate.
+A failed HTTP inspection, non-2xx final response, blocked/unfinished redirect, or incomplete HTTPS certificate inspection gives Inconclusive regardless of score. Missing security headers alone do not prove phishing. A valid HTTPS certificate alone does not prove a business or page is legitimate. Certificate expiry under 30 days is a warning; short-lived certificates can be legitimate.
 
 Appropriate product wording: “URL risk assessment”, “HTTP header presence”, “TLS hostname and trust-chain checks”, “unverified community reports”. Avoid “Verified Safe”, “malware protection”, “known-bad database checks”, “exposed-service scanning”, “certificate transparency validation”, “cryptographic integrity verification” or “AI detection” unless those capabilities are implemented and validated. UI copy, chart, loading text, footer and README have been corrected. This is a technical wording review, not a review of legal terms of service.
 
@@ -41,7 +41,7 @@ HTTPS is needed between browser and Sentinel; configure TLS at the hosting proxy
 
 ## Scanner and application safeguards
 
-The scanner validates schemes and allowed web ports, rejects URL credentials and local names, and conservatively blocks non-global IP ranges including IPv4-mapped IPv6, NAT64 and 6to4. Cancellable DNS lookup resolves once and pins the validated address for HTTP/TLS. Mixed private/public answers are rejected. Redirects are not followed; response bodies are destroyed at headers, not executed. Absolute six-second deadlines constrain both slow-drip HTTP and TLS inspections. DNS has a six-second cancellation deadline (two-second resolver attempts); one scan can take approximately 12 seconds including DNS, plus event-loop scheduling. Network-level outbound firewall rules remain necessary defense in depth; IP validation does not replace egress isolation.
+The scanner validates schemes and allowed web ports, rejects URL credentials and local names, and conservatively blocks non-global IP ranges including IPv4-mapped IPv6, NAT64 and 6to4. Cancellable DNS lookup resolves once and pins the validated address for HTTP/TLS. Mixed private/public answers are rejected. Every HTTP redirect is validated and re-resolved before following it; HTTPS downgrades, private destinations and loops are blocked. Response bodies are destroyed at headers, not executed. Absolute six-second deadlines constrain both slow-drip HTTP and TLS inspections. DNS has a six-second cancellation deadline (two-second resolver attempts); a 15-second overall scan deadline bounds redirects and final TLS inspection, plus event-loop scheduling. HTTP headers and final TLS inspection are sequential. Network-level outbound firewall rules remain necessary defense in depth; IP validation does not replace egress isolation.
 
 Express enforces JSON bodies (16 KB), rate limits, bounded concurrent scans, static-root isolation, response security headers and constant-time admin token comparison. These checks reduce common abuse; they do not prove immunity to attacks or DDoS. No server-side test executes real malware or scans third-party malicious hosts.
 
@@ -55,7 +55,7 @@ Express enforces JSON bodies (16 KB), rate limits, bounded concurrent scans, sta
 | Admin requests | Default 10/minute/IP, also subject to general limiter |
 | Request body | 16 KB JSON |
 | Outbound response header | 16 KB |
-| DNS / HTTP / TLS deadline | Each phase up to 6 seconds; HTTP/TLS run in parallel after DNS |
+| DNS / HTTP / TLS deadline | Each phase up to 6 seconds; 15-second total scan deadline across redirects and final TLS |
 | Stored history | Maximum 10,000 scans and 10,000 deduplicated reports |
 
 These controls are not measured maximum users, RPS or availability guarantees. SQLite writes and purging are synchronous; all replicas need coordinated storage/limits if scaling. Rate limits are in memory and reset on restart; there is no distributed queue, caching, shared limiter or upstream DDoS protection. Deploy behind connection limits/WAF, isolate scanner workers and egress, and use a shared queue/limiter plus a suitable database before horizontal scaling. Do not mount the SQLite WAL database on network storage for replicas.
@@ -87,3 +87,12 @@ No public production URL, hosting metrics, TLS proxy configuration, storage volu
 - OWASP SSRF prevention and DNS/redirect controls: https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
 
 These documents informed the safeguards; the test results above describe what was actually exercised locally.
+
+
+## Local GitHub connection follow-up
+
+The screenshot supplied after the first audit matches the old source and main remained at the pre-fix commit; the original PR had not been merged. The follow-up adds bounded, validated HTTP redirects (including .git repository links), classified backend connection failures, a backend version in `/api/health`, a stale-backend guard in the frontend, revalidated HTML caching and clearer check-row spacing.
+
+Run `npm run diagnose -- https://github.com/` on the same computer as `npm start`. It reports DNS/HTTP/TLS failures without printing submitted URL paths or proxy credentials. Browser access and Node.js access can differ because of DNS, VPN, antivirus/firewall or proxy configuration. The scanner uses direct sockets; it does not silently use forward proxies. A proxy-only environment requires a scanner host with permitted direct DNS and web access, or a separately designed trusted scanner service. Never disable SSRF protection or invent a successful scan to conceal network restrictions.
+
+In this execution environment, direct Node DNS returned EAI_AGAIN/ECONNREFUSED while a proxy-backed curl request reached GitHub. This demonstrates an environment connectivity limitation here; it does not establish the user's local firewall/DNS configuration. GitHub itself could not be validated end-to-end through this direct scanner here. Local HTTP/TLS fixtures and redirect regressions validate the code path; `npm run test:render --prefix client` also verifies the failure and empty states render without a fabricated safe verdict or issuer. Full browser rendering remains unverified.

@@ -20,7 +20,7 @@ const pillars = [
       </>
     ),
     title: 'Web security',
-    desc: 'Live HTTP response and security-header presence checks. Redirect destinations, exposed services, and application vulnerabilities are not scanned.',
+    desc: 'Live HTTP response and security-header presence checks. Up to three validated redirects are followed. Exposed services and application vulnerabilities are not scanned.',
   },
   {
     icon: (

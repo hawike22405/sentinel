@@ -27,7 +27,7 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-router.get('/api/health', (_req, res) => res.json({ ok: true, service: 'sentinel' }));
+router.get('/api/health', (_req, res) => res.json({ ok: true, service: 'sentinel', scannerVersion: 'heuristic-v2-redirects', scanTimeoutMs: 15000 }));
 
 router.post('/api/scan', async (req, res, next) => {
   try {

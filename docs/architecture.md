@@ -20,11 +20,11 @@ SQLite stores scans and reports. In-flight admission and rate-limit buckets live
 
 ## Third-party integrations
 
-No reputation provider or malware-analysis service is configured. Direct outbound DNS/HTTP/TLS observations are real. No page body is downloaded or executed, and no redirects are followed. TLS validation uses the runtime CA trust store; transparency and revocation services are not consulted. Frontend fonts/assets are bundled locally.
+No reputation provider or malware-analysis service is configured. Direct outbound DNS/HTTP/TLS observations are real. No page body is downloaded or executed, and up to three HTTP redirects are followed only after per-hop validation and DNS pinning. TLS validation uses the runtime CA trust store; transparency and revocation services are not consulted. Frontend fonts/assets are bundled locally.
 
 ## Reusable patterns
 
 - Existing CSS tokens and badge classes continue to define the presentation.
 - Scan and report validation share `validateUrl`; storage privacy shares `storageUrl`.
-- HTTP and TLS share pinned-address lookup and six-second absolute observation deadlines.
+- HTTP and TLS share pinned-address lookup six-second per-observation deadlines and a 15-second total scan deadline.
 - Deterministic local socket/SQLite fixtures validate behavior without contacting hostile third-party sites.
