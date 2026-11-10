@@ -4,6 +4,10 @@
 
 **[Open the live scanner →](https://sentinel-iota-snowy.vercel.app)** · [Scoring and limits](docs/security-audit.md) · [Deployment guide](docs/vercel-deployment.md)
 
+[![Watch Sentinel scan a link and display the results](docs/media/sentinel-preview.jpg)](https://raw.githubusercontent.com/hawike22405/sentinel/main/docs/media/sentinel-demo.mp4)
+
+**[Watch the demo · 29 seconds](https://raw.githubusercontent.com/hawike22405/sentinel/main/docs/media/sentinel-demo.mp4)** — Follow a link from submission to its risk score and individual checks.
+
 ## Inside a scan
 
 | Signal | What Sentinel checks |
