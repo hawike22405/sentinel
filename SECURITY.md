@@ -1,6 +1,6 @@
 # Security report: Sentinel
 
-Status of the 27-item hardening checklist. "Verified" means covered by `npm test` (72 checks, real HTTP against real server instances) or a command named below.
+Status of the 27-item hardening checklist. "Verified" means covered by `npm test` (real HTTP against real server instances) or a command named below.
 
 | # | Item | Result | Evidence |
 |---|------|--------|----------|
@@ -32,11 +32,8 @@ Status of the 27-item hardening checklist. "Verified" means covered by `npm test
 | 26 | Full security review | Done; see Open items. | this file |
 | 27 | Test + report | `npm test`, this file. | |
 
-## Open items
-- TLS is not terminated by the app. Deploy behind a TLS proxy and set `TRUST_PROXY=1`, `FORCE_HTTPS=1`, `PUBLIC_HOST`. Without `TRUST_PROXY=1` behind a proxy, all users share one rate-limit bucket.
-- Rate limits are per-IP and in memory (reset on restart, not shared across instances).
-- Report poisoning: anyone can report a legitimate site and raise its score (+20 per report, capped at +40). Needs de-duplication/moderation workflow beyond the delete endpoint.
-- Scanner still makes outbound requests. Private/loopback/link-local ranges and rebinding are blocked at connect time, but NAT64 (64:ff9b::/96) and 6to4 (2002::/16) prefixes are not.
-- The database is not encrypted at rest; logs go to stderr only (no retention or alerting).
-- GitHub-side items were not reviewed: Actions secrets, forks, deleted branches, repo visibility, branch protection.
-- If cookies, accounts or payments are added later, items 5, 15, 16, 17 and 19 must be built and tested then.
+## Current audit and limitations
+
+The historical checklist above describes the original hardening work, not certification of the current deployment. For the current detection capabilities, fixes, privacy migration, retention, encryption requirements, dependency checks, capacity fixture, and unresolved production work, see [docs/security-audit.md](docs/security-audit.md).
+
+Anonymous reports no longer influence scores; report duplicates are rejected. Non-global IPv6 transition ranges are blocked, network addresses are pinned, and absolute inspection deadlines are tested. Database records are origin-only and bounded by age/count. SQLite remains unencrypted at rest. Rate limiting is per-process and in memory. Hosting configuration and detection accuracy remain unverified.

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node scripts/security-tests.mjs"
+    "test": "node --test scripts/detector-tests.mjs scripts/store-tests.mjs && node scripts/security-tests.mjs && node scripts/capacity-tests.mjs"
   },
   "keywords": [],
   "type": "module",

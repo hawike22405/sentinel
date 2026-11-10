@@ -1,21 +1,30 @@
 # Architecture — Sentinel
 
 ## System boundary
-Sentinel's presentation layer is a single-page static website. It defines one system boundary: the browser tab. It does not perform live network scanning, does not contact certificate authorities, and does not store user data. All detection results in this slice are simulated for demonstration and review purposes.
+
+React/Vite builds to `public/`. Express serves only that directory and the JSON API. The root `index.html` is an older standalone prototype, not the deployed Express entry. The backend contacts submitted HTTP(S) targets and stores limited results in SQLite outside the public root. See [the current audit](security-audit.md) for the feature boundary and deployment requirements.
 
 ## Logical modules
-1. **Threat analysis** — reputation and known-bad list evaluation (simulated).
-2. **Web security assessment** — HTTP headers, exposed services, software freshness (simulated).
-3. **Certificate validation** — TLS chain, expiry, transparency, cryptographic strength (simulated).
-4. **Collaborative threat intelligence** — community-reported threats with source and date.
+
+1. `src/detector.js`: URL validation and heuristic scoring, cancellable DNS resolution, pinned-address HTTP and TLS observations, evidence availability and limitations.
+2. `src/routes.js`: input validation, scan admission (10 slots), result retrieval, public unverified reporting and protected report deletion.
+3. `src/store.js`: origin-only SQLite records, prepared statements, legacy privacy migration, report deduplication, age/count retention.
+4. `server.js`: transport/proxy configuration, JSON/body/rate limits, application response headers and static-root isolation.
+5. `client/src`: URL submission, evidence display, risk contribution chart, unverified report feed and existing visual components.
 
 ## State management
-Vanilla JavaScript module pattern. UI state lives in a single `state` object (current URL, risk score, verdict, check results, feed entries). The DOM is updated by a `render()` function reading from `state` — no duplicate rendering paths.
+
+React holds the current scan response and report feed in component state. API results carry score version, assessment completeness, component contributions and individual checks. The legacy verdict strings remain compatibility bands; `unknown` explicitly represents an incomplete assessment. No client fallback fabricates a result when the API fails.
+
+SQLite stores scans and reports. In-flight admission and rate-limit buckets live in process memory; they are not shared across replicas. Stored result UUIDs are bearer-style retrieval identifiers, not authenticated private history.
 
 ## Third-party integrations
-None in this slice. No external APIs, no analytics, no third-party scripts. Fonts use the system font stack to avoid network dependencies.
+
+No reputation provider or malware-analysis service is configured. Direct outbound DNS/HTTP/TLS observations are real. No page body is downloaded or executed, and no redirects are followed. TLS validation uses the runtime CA trust store; transparency and revocation services are not consulted. Frontend fonts/assets are bundled locally.
 
 ## Reusable patterns
-- Risk score → color mapping (safe/suspicious/malicious) defined once in `assets/css/style.css`.
-- Verdict badge component: one class set reused across scanner result and feed.
-- URL input with inline validation: single handler, single error container.
+
+- Existing CSS tokens and badge classes continue to define the presentation.
+- Scan and report validation share `validateUrl`; storage privacy shares `storageUrl`.
+- HTTP and TLS share pinned-address lookup and six-second absolute observation deadlines.
+- Deterministic local socket/SQLite fixtures validate behavior without contacting hostile third-party sites.

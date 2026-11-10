@@ -75,7 +75,7 @@ export default function ThreatFeed() {
     <section className="section section--short" id="threat-feed" aria-labelledby="feed-h">
       <div className="container">
         <h2 id="feed-h">Threat feed</h2>
-        <p>Recently reported threats from the collaborative intelligence network.</p>
+        <p>Unverified community submissions. Reports may be mistaken and do not change the risk score. Only website origins are published.</p>
         <div className="feed" ref={feedListRef} aria-live="polite">
           {loading && <p className="meta">Loading reports&hellip;</p>}
           {!loading && error && <p className="meta">{error}</p>}
@@ -90,11 +90,11 @@ export default function ThreatFeed() {
                   {r.type} &middot; {timeAgo(r.created_at)} &middot; {r.source}
                 </span>
               </div>
-              <span className={`badge ${badgeMap[r.verdict] || 'badge--suspicious'}`}>Reported</span>
+              <span className={`badge ${badgeMap[r.verdict] || 'badge--suspicious'}`}>Unverified</span>
             </div>
           ))}
         </div>
-        <form id="report-form" className="input-group report-form" novalidate onSubmit={handleSubmit}>
+        <form id="report-form" className="input-group report-form" noValidate onSubmit={handleSubmit}>
           <label htmlFor="report-url" className="sr-only">Website URL to report</label>
           <input ref={reportUrlRef} id="report-url" className="input" type="url" placeholder="https://suspicious-site.example" required />
           <label htmlFor="report-type" className="sr-only">Report type</label>

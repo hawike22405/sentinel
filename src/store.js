@@ -12,6 +12,7 @@ try { chmodSync(DATA_DIR, 0o700); } catch { /* unsupported on some platforms */ 
 const db = new Database(join(DATA_DIR, 'sentinel.db'));
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
+db.pragma('secure_delete = ON');
 try { chmodSync(join(DATA_DIR, 'sentinel.db'), 0o600); } catch { /* unsupported on some platforms */ }
 
 db.exec(`
@@ -47,6 +48,45 @@ if (!db.prepare('PRAGMA table_info(reports)').all().some((c) => c.name === 'host
 }
 db.exec('CREATE INDEX IF NOT EXISTS idx_reports_host ON reports(host)');
 
+// Store only the origin: paths, queries and fragments can contain personal data or tokens.
+export function storageUrl(input) {
+  return new URL(input).origin + '/';
+}
+
+const scrubUrls = db.transaction(() => {
+  for (const table of ['scans', 'reports']) {
+    const update = db.prepare(`UPDATE ${table} SET url = ? WHERE id = ?`);
+    for (const row of db.prepare(`SELECT id, url FROM ${table}`).all()) {
+      try { update.run(storageUrl(row.url), row.id); }
+      catch { db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(row.id); }
+    }
+  }
+  // One unverified report per host/type; repeated anonymous submissions are not votes.
+  db.exec(`DELETE FROM reports WHERE rowid NOT IN (SELECT MIN(rowid) FROM reports GROUP BY host, type)`);
+});
+if (db.pragma('user_version', { simple: true }) < 1) {
+  scrubUrls();
+  // Rebuild pages once: shrinking an old URL in place may leave bytes in free space.
+  db.exec('VACUUM');
+  db.pragma('user_version = 1');
+}
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_reports_host_type ON reports(host, type)');
+
+// Retain at most 10,000 records per table and 30 days of history. Purge on startup,
+// writes and hourly, including when the service is otherwise idle.
+export function pruneStore() {
+  const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
+  for (const table of ['scans', 'reports']) {
+    db.prepare(`DELETE FROM ${table} WHERE julianday(created_at) < julianday(?)`).run(cutoff);
+    db.exec(`DELETE FROM ${table} WHERE id IN (SELECT id FROM ${table} ORDER BY created_at DESC LIMIT -1 OFFSET 10000)`);
+  }
+}
+pruneStore();
+// Discard old WAL pages containing pre-migration URLs (backups need their own policy).
+db.pragma('wal_checkpoint(TRUNCATE)');
+const pruneTimer = setInterval(pruneStore, 3600000);
+pruneTimer.unref();
+
 // Old rows hold SQLite "YYYY-MM-DD HH:MM:SS" (UTC, no zone); normalise to ISO 8601.
 const isoTs = (v) => (v && !v.includes('T') ? v.replace(' ', 'T') + 'Z' : v);
 
@@ -55,7 +95,7 @@ const insertScan = db.prepare(
 );
 const getScan = db.prepare('SELECT * FROM scans WHERE id = ?');
 const insertReport = db.prepare(
-  'INSERT INTO reports (id, url, host, type, source, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+  'INSERT OR IGNORE INTO reports (id, url, host, type, source, created_at) VALUES (?, ?, ?, ?, ?, ?)'
 );
 const removeReport = db.prepare('DELETE FROM reports WHERE id = ?');
 const countByHost = db.prepare('SELECT COUNT(*) AS n FROM reports WHERE host = ?');
@@ -64,7 +104,8 @@ const getReports = db.prepare(
 );
 
 export function createScan({ id, url, score, verdict, details }) {
-  insertScan.run(id, url, score, verdict, JSON.stringify(details), new Date().toISOString());
+  insertScan.run(id, storageUrl(url), score, verdict, JSON.stringify(details), new Date().toISOString());
+  pruneStore();
 }
 
 export function getScanById(id) {
@@ -76,6 +117,7 @@ export function getScanById(id) {
     score: row.score,
     verdict: row.verdict,
     created_at: isoTs(row.created_at),
+    ...JSON.parse(row.details || '{}'),
     details: JSON.parse(row.details || '{}'),
   };
 }
@@ -83,7 +125,9 @@ export function getScanById(id) {
 export function createReport({ id, url, type, source }) {
   let host = null;
   try { host = new URL(url).hostname; } catch { /* keep null */ }
-  insertReport.run(id, url, host, type, source, new Date().toISOString());
+  const result = insertReport.run(id, storageUrl(url), host, type, source, new Date().toISOString());
+  pruneStore();
+  return result.changes > 0;
 }
 
 export function deleteReport(id) {
@@ -99,5 +143,6 @@ export function listReports(limit = 50) {
 }
 
 export function closeStore() {
+  clearInterval(pruneTimer);
   db.close();
 }

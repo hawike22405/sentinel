@@ -3,61 +3,6 @@ import { mountRibbon } from '../ribbon.js';
 import CurvedInput from './CurvedInput';
 import { Component as BoxLoader } from '@/components/ui/loader-3';
 
-const HARVEST_KEYWORDS = [
-  'login', 'verify', 'secure', 'account', 'paypal', 'bank',
-  'update', 'signin', 'webscr', 'confirm',
-];
-
-function computeScore(url) {
-  let score = 0;
-  const reasons = [];
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname;
-    const protocol = parsed.protocol;
-
-    if (protocol !== 'https:') {
-      score += 30;
-      reasons.push('Insecure protocol (HTTP)');
-    }
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
-      score += 25;
-      reasons.push('IP address instead of domain');
-    }
-    if (parsed.username || host.includes('@')) {
-      score += 20;
-      reasons.push('Credentials in URL');
-    }
-    if (host.includes('-')) {
-      score += 15;
-      reasons.push('Hyphenated domain');
-    }
-    if (/xn--/.test(host)) {
-      score += 15;
-      reasons.push('Internationalized domain (punycode)');
-    }
-    if (url.length > 75) {
-      score += 10;
-      reasons.push('Unusually long URL');
-    }
-    const found = HARVEST_KEYWORDS.filter(
-      (k) => host.includes(k) || parsed.pathname.toLowerCase().includes(k),
-    );
-    if (found.length) {
-      score += 10 * found.length;
-      reasons.push('Credential-harvesting keywords: ' + found.join(', '));
-    }
-    const dots = host.split('.').length - 1;
-    if (dots >= 4) {
-      score += 10;
-      reasons.push('Deep subdomain chain');
-    }
-  } catch {
-    // invalid URL handled by caller
-  }
-  return { score: Math.min(100, score), reasons };
-}
-
 export default function Hero({ onScanComplete }) {
   const [formError, setFormError] = useState('');
   const [isScanning, setIsScanning] = useState(false);
@@ -93,6 +38,7 @@ export default function Hero({ onScanComplete }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: urlStr }),
+      signal: AbortSignal.timeout(20000),
     });
 
     try {
@@ -135,7 +81,7 @@ export default function Hero({ onScanComplete }) {
             </div>
             <h2 className="scan-loader-title">Analyzing Security Indicators</h2>
             <p className="scan-loader-desc">
-              Checking TLS certificate integrity, reputation databases, and heuristic evasion patterns&hellip;
+              Checking URL patterns, HTTP headers, TLS certificates, and unverified community reports&hellip;
             </p>
           </div>
         </div>
@@ -145,10 +91,11 @@ export default function Hero({ onScanComplete }) {
         <div className="text-first">
           <h1 id="hero-h">Verify links before you click.</h1>
           <p className="tagline">
-            Sentinel checks reputation, page security, TLS certificates, and
+            Sentinel checks URL patterns, HTTP headers, TLS certificates, and
             community reports in one scan &mdash; then gives you a plain-language
-            verdict.
+            risk assessment. A low score does not guarantee safety.
           </p>
+          <p className="meta">Only the website origin is saved for 30 days. The submitted URL is contacted by the scanner. Avoid submitting private links.</p>
           <CurvedInput
               placeholder="https://example.com/login"
               buttonText={isScanning ? 'Scanning\u2026' : 'Scan link'}

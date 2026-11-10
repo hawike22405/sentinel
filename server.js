@@ -9,7 +9,7 @@ import { closeStore } from './src/store.js';
 import { logSecurity } from './src/security-log.js';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = process.env.PORT === '0' ? 0 : Number(process.env.PORT) || 3000;
 const FORCE_HTTPS = process.env.FORCE_HTTPS === '1';
 const PUBLIC_HOST = process.env.PUBLIC_HOST;
 
@@ -106,7 +106,7 @@ app.use((err, req, res, _next) => {
 });
 
 const server = app.listen(PORT, () => {
-  console.log(`Sentinel backend listening on http://localhost:${PORT}`);
+  console.log(`Sentinel backend listening on http://localhost:${server.address().port}`);
 });
 
 const shutdown = () => {

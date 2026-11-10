@@ -1,294 +1,213 @@
 import { URL } from 'node:url';
 import { get } from 'node:http';
 import { get as getSecure } from 'node:https';
-import { connect } from 'node:tls';
-import { isIP } from 'node:net';
-import { lookup as dnsLookup, promises as dnsPromises } from 'node:dns';
+import { connect, checkServerIdentity } from 'node:tls';
+import { isIP, BlockList } from 'node:net';
+import { Resolver } from 'node:dns/promises';
 
-const REQUEST_TIMEOUT_MS = 6000;
-// Only standard web ports: stops the scanner being used as a port scanner against third parties.
+export const REQUEST_TIMEOUT_MS = 6000;
 const ALLOWED_PORTS = new Set(['', '80', '443', '8080', '8443']);
+const HARVEST_KEYWORDS = ['login', 'verify', 'secure', 'account', 'paypal', 'bank', 'update', 'signin', 'webscr', 'confirm'];
+const SECURITY_HEADERS = ['strict-transport-security', 'x-frame-options', 'x-content-type-options', 'content-security-policy', 'referrer-policy', 'permissions-policy'];
+const blocked = new BlockList();
+for (const [address, prefix] of [
+  ['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8],
+  ['169.254.0.0', 16], ['172.16.0.0', 12], ['192.0.0.0', 24], ['192.0.2.0', 24],
+  ['192.88.99.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15],
+  ['198.51.100.0', 24], ['203.0.113.0', 24], ['224.0.0.0', 3],
+]) blocked.addSubnet(address, prefix, 'ipv4');
+for (const [address, prefix] of [
+  ['2001::', 23], ['2001:db8::', 32], ['2002::', 16], ['3fff::', 20],
+]) blocked.addSubnet(address, prefix, 'ipv6');
 
-// Known-bad signal patterns used only for the simulated reputation layer.
-// These are deterministic heuristics, not a live threat feed.
-const HARVEST_KEYWORDS = [
-  'login', 'verify', 'secure', 'account', 'paypal', 'bank',
-  'update', 'signin', 'webscr', 'confirm',
-];
-
-const SECURITY_HEADERS = [
-  'strict-transport-security',
-  'x-frame-options',
-  'x-content-type-options',
-  'content-security-policy',
-  'referrer-policy',
-  'permissions-policy',
-];
-
-// True for loopback, private, link-local, CGNAT, multicast and reserved addresses.
+// Fail closed for non-global addresses, including mapped IPv4, NAT64 and tunnels.
 export function isPrivateIp(ip) {
   const family = isIP(ip);
-  if (family === 4) {
-    const [a, b] = ip.split('.').map(Number);
-    return (
-      a === 0 || a === 10 || a === 127 || a >= 224 ||
-      (a === 100 && b >= 64 && b <= 127) ||
-      (a === 169 && b === 254) ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 168) ||
-      (a === 192 && b === 0) ||
-      (a === 198 && (b === 18 || b === 19))
-    );
-  }
+  if (family === 4) return blocked.check(ip, 'ipv4');
   if (family === 6) {
-    const v6 = ip.toLowerCase();
-    return (
-      v6 === '::' || v6 === '::1' ||
-      v6.startsWith('::ffff:') || // IPv4-mapped: block conservatively
-      /^f[cd]/.test(v6) || /^fe[89ab]/.test(v6) || /^ff/.test(v6)
-    );
+    const first = parseInt(ip.split(':')[0], 16);
+    return !(first >= 0x2000 && first <= 0x3fff) || blocked.check(ip, 'ipv6');
   }
-  return false;
-}
-
-function isPrivateHostname(host) {
-  const bare = host.replace(/^\[|\]$/g, '').toLowerCase();
-  if (bare === 'localhost' || bare.endsWith('.localhost') || bare.endsWith('.local') || bare.endsWith('.internal')) return true;
-  return isIP(bare) !== 0 && isPrivateIp(bare);
-}
-
-// DNS lookup that refuses private results. Passed to http/tls so the address that
-// is validated is the address that is connected to (blocks DNS rebinding).
-function publicOnlyLookup(hostname, options, callback) {
-  dnsLookup(hostname, { ...options, all: true }, (err, addrs) => {
-    if (err) return callback(err);
-    const ok = addrs.filter((a) => !isPrivateIp(a.address));
-    if (!ok.length) return callback(new Error('Target resolves to a private address.'));
-    if (options && options.all) return callback(null, ok);
-    callback(null, ok[0].address, ok[0].family);
-  });
-}
-
-async function resolvesToPrivate(hostname) {
-  if (isIP(hostname.replace(/^\[|\]$/g, ''))) return false; // literals checked by validateTargetUrl
-  try {
-    const addrs = await dnsPromises.lookup(hostname, { all: true });
-    return addrs.some((a) => isPrivateIp(a.address));
-  } catch {
-    return false; // unresolvable hosts are still scored by heuristics
-  }
+  return true;
 }
 
 export function validateTargetUrl(input) {
   let url;
-  try {
-    url = new URL(input);
-  } catch {
-    return { ok: false, error: 'That is not a valid URL.' };
-  }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    return { ok: false, error: 'Only http:// and https:// URLs can be scanned.' };
-  }
-  if (!url.hostname || url.hostname.length > 253) {
-    return { ok: false, error: 'The URL is missing a valid hostname.' };
-  }
-  if (!ALLOWED_PORTS.has(url.port)) {
-    return { ok: false, error: 'Only standard web ports (80, 443, 8080, 8443) can be scanned.' };
-  }
-  if (isPrivateHostname(url.hostname)) {
+  try { url = new URL(input); } catch { return { ok: false, error: 'That is not a valid URL.' }; }
+  if (!['http:', 'https:'].includes(url.protocol)) return { ok: false, error: 'Only http:// and https:// URLs can be scanned.' };
+  if (!url.hostname || url.hostname.length > 253 || url.href.length > 2048) return { ok: false, error: 'The URL is missing a valid hostname or is too long.' };
+  if (!ALLOWED_PORTS.has(url.port)) return { ok: false, error: 'Only standard web ports (80, 443, 8080, 8443) can be scanned.' };
+  // A URL with credentials can contain a password and creates ambiguous identity.
+  if (url.username || url.password) return { ok: false, error: 'Remove usernames and passwords from the URL before scanning.' };
+  const host = url.hostname.replace(/^\[|\]$/g, '').toLowerCase().replace(/\.$/, '');
+  if (host === 'localhost' || /\.(localhost|local|internal)$/.test(host) || (isIP(host) && isPrivateIp(host))) {
     return { ok: false, error: 'Scanning local or private addresses is not allowed.' };
   }
+  if (!isIP(host)) url.hostname = host;
+  url.hash = '';
   return { ok: true, url };
 }
 
-function computeReputation(input) {
-  const url = String(input);
+// Resolve once with a cancellable DNS deadline; connect only to this validated address.
+export async function resolveTarget(hostname) {
+  const host = hostname.replace(/^\[|\]$/g, '');
+  if (isIP(host)) return { address: host, family: isIP(host) };
+  const resolver = new Resolver({ timeout: 2000, tries: 1 });
+  const timer = setTimeout(() => resolver.cancel(), REQUEST_TIMEOUT_MS);
+  try {
+    const answers = await Promise.allSettled([resolver.resolve4(host), resolver.resolve6(host)]);
+    const addresses = answers.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+    if (addresses.some(isPrivateIp)) throw new Error('Target resolves to a private or reserved address.');
+    if (!addresses.length) throw new Error('DNS resolution failed or timed out.');
+    return { address: addresses[0], family: isIP(addresses[0]) };
+  } finally { clearTimeout(timer); }
+}
+
+export function pinnedLookup(target) {
+  return (_host, options, callback) => {
+    if (options?.all) callback(null, [target]);
+    else callback(null, target.address, target.family);
+  };
+}
+
+export function computeReputation(input) {
+  const url = new URL(input);
+  const host = url.hostname;
   let score = 0;
   const reasons = [];
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname;
-    const protocol = parsed.protocol;
-
-    if (protocol !== 'https:') {
-      score += 30;
-      reasons.push('Insecure protocol (HTTP)');
-    }
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
-      score += 25;
-      reasons.push('IP address instead of domain');
-    }
-    if (parsed.username) {
-      score += 20;
-      reasons.push('Credentials in URL');
-    }
-    if (host.includes('-')) {
-      score += 15;
-      reasons.push('Hyphenated domain');
-    }
-    if (/xn--/.test(host)) {
-      score += 15;
-      reasons.push('Internationalized domain (punycode)');
-    }
-    if (url.length > 75) {
-      score += 10;
-      reasons.push('Unusually long URL');
-    }
-    const found = HARVEST_KEYWORDS.filter(
-      (k) => host.includes(k) || parsed.pathname.toLowerCase().includes(k)
-    );
-    if (found.length) {
-      score += 10 * found.length;
-      reasons.push('Credential-harvesting keywords: ' + found.join(', '));
-    }
-    const dots = host.split('.').length - 1;
-    if (dots >= 4) {
-      score += 10;
-      reasons.push('Deep subdomain chain');
-    }
-  } catch {
-    // invalid URL handled by caller
-  }
+  const add = (points, reason) => { score += points; reasons.push(reason); };
+  if (url.protocol !== 'https:') add(30, 'Unencrypted HTTP');
+  if (isIP(host.replace(/^\[|\]$/g, ''))) add(25, 'IP address instead of domain');
+  if (host.includes('-')) add(15, 'Hyphenated domain (weak signal)');
+  if (/xn--/.test(host)) add(15, 'Internationalized domain (weak signal)');
+  if (url.href.length > 75) add(10, 'Long URL (weak signal)');
+  const found = HARVEST_KEYWORDS.filter(k => host.includes(k) || url.pathname.toLowerCase().includes(k));
+  if (found.length) add(10 * found.length, 'Account-related keywords (not proof of phishing): ' + found.join(', '));
+  if (host.split('.').length >= 5) add(10, 'Deep subdomain chain');
   return { score: Math.min(100, score), reasons };
 }
 
-function fetchHeaders(input) {
-  const url = new URL(input);
-  url.username = ''; // never forward credentials typed into the scanned URL
-  url.password = '';
+export function fetchHeaders(url, target) {
   return new Promise((resolve, reject) => {
-    const secure = url.protocol === 'https:';
-    const req = (secure ? getSecure : get)(
-      url,
-      {
-        timeout: REQUEST_TIMEOUT_MS,
-        lookup: publicOnlyLookup,
-        headers: { 'User-Agent': 'SentinelScanner/1.0', Accept: '*/*' },
-        ...(secure ? { rejectUnauthorized: false } : {}), // certificate is judged separately
-      },
-      (res) => {
-        resolve({ statusCode: res.statusCode, headers: res.headers || {} });
-        res.destroy(); // headers are enough; do not download the body
-      }
-    );
-    req.on('timeout', () => req.destroy(new Error('Request timed out')));
-    req.on('error', reject);
+    // Disable pooling: each request must use its pinned DNS address.
+    const req = (url.protocol === 'https:' ? getSecure : get)(url, {
+      agent: false, lookup: pinnedLookup(target), maxHeaderSize: 16384,
+      headers: { 'User-Agent': 'SentinelScanner/1.1', Accept: '*/*' },
+      // Headers are observable even when TLS is invalid; never call them trusted content.
+      ...(url.protocol === 'https:' ? { rejectUnauthorized: false } : {}),
+    }, res => {
+      clearTimeout(timer);
+      resolve({ statusCode: res.statusCode, headers: res.headers || {} });
+      res.destroy(); // never download or execute the body or follow redirects
+    });
+    const timer = setTimeout(() => req.destroy(new Error('Request deadline exceeded')), REQUEST_TIMEOUT_MS);
+    req.on('error', err => { clearTimeout(timer); reject(err); });
   });
 }
 
-async function assessWebSecurity(url) {
-  const checks = [];
-  let missing = 0; // declared outside try: it is read after the try/catch
-  let details = '';
-  try {
-    const { statusCode, headers } = await fetchHeaders(url);
-    for (const h of SECURITY_HEADERS) {
-      const present = Boolean(headers[h]); // Node lower-cases incoming header names
-      if (!present) missing += 1;
-      checks.push({ header: h, present });
-    }
-    details = `HTTP ${statusCode}; ${SECURITY_HEADERS.length - missing} of ${SECURITY_HEADERS.length} security headers present.`;
-    if (/nginx\/[01]\.|apache\/2\.[0-2]\./i.test(headers.server || '')) {
-      details += ' Server header indicates potentially outdated software.';
-    }
-  } catch {
-    return { status: 'warn', detail: 'Could not reach the host to inspect security headers.', checks };
-  }
-  if (missing === 0) return { status: 'ok', detail: details, checks };
-  if (missing <= 2) return { status: 'warn', detail: details, checks };
-  return { status: 'bad', detail: details, checks };
-}
-
-function validateCertificate(url) {
-  const hostname = url.hostname.replace(/^\[|\]$/g, '');
-  const port = url.protocol === 'https:' && url.port ? Number(url.port) : 443;
-  return new Promise((resolve) => {
-    let done = false;
-    const socket = connect({
-      host: hostname,
-      port,
-      ...(isIP(hostname) ? {} : { servername: hostname }),
-      rejectUnauthorized: false, // inspect, never trust: validity is evaluated below
-      lookup: publicOnlyLookup,
-      timeout: REQUEST_TIMEOUT_MS,
-    });
-    const finish = (status, detail, info) => {
-      if (done) return;
-      done = true;
-      socket.destroy();
-      resolve({ status, detail, ...(info ? { info } : {}) });
-    };
-
-    socket.on('secureConnect', () => {
-      const cert = socket.getPeerCertificate(true);
-      if (!cert || !cert.subject) return finish('bad', 'No certificate presented.');
-      const expiry = new Date(cert.valid_to);
-      const days = (expiry - Date.now()) / 86400000;
-      const selfSigned = Boolean(cert.issuerCertificate) && cert.issuerCertificate.fingerprint256 === cert.fingerprint256;
-      const info = {
-        issuer: cert.issuer.O || cert.issuer.CN || 'unknown',
-        expires: Number.isNaN(expiry.getTime()) ? null : expiry.toISOString().slice(0, 10),
-        chain: socket.authorized ? 'Valid' : 'Not trusted',
-        fingerprint: cert.fingerprint256 || null,
-      };
-      const problems = [];
-      if (Number.isNaN(days) || days <= 0) problems.push('Certificate has expired.');
-      if (selfSigned) problems.push('Self-signed certificate.');
-      else if (!socket.authorized) problems.push(`Certificate is not trusted (${socket.authorizationError}).`);
-      if (problems.length) return finish('bad', problems.join(' '), info);
-      if (days < 30) return finish('warn', `Certificate is valid but expires in ${Math.floor(days)} days.`, info);
-      finish('ok', `Trusted chain; issuer: ${info.issuer}; expires ${info.expires}.`, info);
-    });
-    socket.on('error', () => finish('warn', 'No HTTPS service, or the TLS handshake failed.'));
-    socket.on('timeout', () => finish('warn', 'TLS inspection timed out.'));
-  });
-}
-
-function scoreToVerdict(score) {
-  if (score <= 33) return 'safe';
-  if (score <= 66) return 'suspicious';
-  return 'malicious';
-}
-
-export async function scan(url, { communityReports = 0 } = {}) {
-  const validated = validateTargetUrl(url);
-  if (!validated.ok) return { error: validated.error };
-  const { url: cleanUrl } = validated;
-  if (await resolvesToPrivate(cleanUrl.hostname)) {
-    return { error: 'Scanning local or private addresses is not allowed.' };
-  }
-  const { score: repScore, reasons } = computeReputation(cleanUrl);
-
-  const [headersResult, certResult] = await Promise.all([
-    assessWebSecurity(cleanUrl).catch(() => ({ status: 'warn', detail: 'Security header assessment failed.', checks: [] })),
-    validateCertificate(cleanUrl).catch(() => ({ status: 'warn', detail: 'Certificate inspection failed.' })),
-  ]);
-
-  // Collaborative intelligence: reports submitted through /api/feed/report.
-  const intelScore = Math.min(40, communityReports * 20);
-  const threat = communityReports > 0
-    ? { status: communityReports >= 2 ? 'bad' : 'warn', detail: `${communityReports} community report${communityReports === 1 ? '' : 's'} for this site.` }
-    : { status: 'ok', detail: 'No community reports for this site.' };
-
-  const total = Math.min(
-    100,
-    repScore + intelScore + (headersResult.status === 'bad' ? 15 : 0) + (certResult.status === 'bad' ? 15 : 0)
-  );
-
+export function assessHeaders({ statusCode, headers }) {
+  const checks = SECURITY_HEADERS.map(header => ({ header, present: Boolean(headers[header]) }));
+  const missing = checks.filter(c => !c.present).length;
+  const redirected = statusCode >= 300 && statusCode < 400;
+  const completed = statusCode >= 200 && statusCode < 300;
   return {
-    score: total,
-    verdict: scoreToVerdict(total),
+    status: !completed ? 'warn' : missing === 0 ? 'ok' : missing <= 2 ? 'warn' : 'bad',
+    completed, statusCode, checks,
+    detail: `HTTP ${statusCode}; ${checks.length - missing} of ${checks.length} security headers present.` +
+      (redirected ? ' Redirect destination was not scanned.' : !completed ? ' This response may be an error or bot-blocking page.' : '') +
+      ' Header presence does not prove a site is safe or its policies effective.',
+  };
+}
+
+export function inspectCertificate(socket, hostname) {
+  const cert = socket.getPeerCertificate(true);
+  if (!cert?.subject) return { status: 'bad', completed: true, detail: 'No certificate presented.' };
+  const expiry = new Date(cert.valid_to);
+  const start = new Date(cert.valid_from);
+  const days = (expiry - Date.now()) / 86400000;
+  const identityError = checkServerIdentity(hostname, cert);
+  const problems = [];
+  if (!Number.isFinite(days) || days <= 0) problems.push('Certificate has expired or has invalid dates.');
+  if (!Number.isFinite(start.getTime()) || start > Date.now()) problems.push('Certificate is not yet valid or has invalid dates.');
+  if (identityError) problems.push('Certificate does not match the requested hostname.');
+  if (!socket.authorized) problems.push(`Certificate chain is not trusted (${socket.authorizationError}).`);
+  if (cert.bits && cert.bits < (cert.asn1Curve ? 256 : 2048)) problems.push('Certificate public key is below the configured strength threshold.');
+  const info = {
+    issuer: cert.issuer?.O || cert.issuer?.CN || 'unknown',
+    expires: Number.isFinite(expiry.getTime()) ? expiry.toISOString().slice(0, 10) : null,
+    chain: socket.authorized && !identityError ? 'Trusted by Node CA store' : 'Not trusted',
+    fingerprint: cert.fingerprint256 || null,
+    publicKeyBits: cert.bits || null, protocol: socket.getProtocol(),
+    transparencyLog: 'Not checked', revocation: 'Not checked',
+  };
+  return {
+    status: problems.length ? 'bad' : days < 30 ? 'warn' : 'ok', completed: true, info,
+    detail: problems.length ? problems.join(' ') : `Hostname and chain valid; expires ${info.expires}.` +
+      (days < 30 ? ' Expires within 30 days.' : '') + ' Revocation, transparency and CA key-generation integrity are not checked.',
+  };
+}
+
+export function validateCertificate(url, target) {
+  if (url.protocol !== 'https:') return Promise.resolve({ status: 'warn', completed: false, detail: 'Not checked: the submitted URL uses unencrypted HTTP.' });
+  const host = url.hostname.replace(/^\[|\]$/g, '');
+  return new Promise(resolve => {
+    let done = false;
+    const socket = connect({ host, port: Number(url.port) || 443, ...(isIP(host) ? {} : { servername: host }),
+      rejectUnauthorized: false, lookup: pinnedLookup(target) });
+    const finish = result => {
+      if (done) return;
+      done = true; clearTimeout(timer); socket.destroy(); resolve(result);
+    };
+    const timer = setTimeout(() => finish({ status: 'warn', completed: false, detail: 'TLS inspection deadline exceeded.' }), REQUEST_TIMEOUT_MS);
+    socket.on('secureConnect', () => {
+      try { finish(inspectCertificate(socket, host)); }
+      catch { finish({ status: 'warn', completed: false, detail: 'Certificate inspection failed.' }); }
+    });
+    socket.on('error', () => finish({ status: 'warn', completed: false, detail: 'TLS connection failed; certificate could not be inspected.' }));
+    socket.on('close', () => finish({ status: 'warn', completed: false, detail: 'TLS connection closed before inspection.' }));
+  });
+}
+
+export function buildResult(url, headers, certificate, communityReports = 0) {
+  const { score: repScore, reasons } = computeReputation(url);
+  const score = Math.min(100, repScore + (headers.status === 'bad' ? 15 : 0) + (certificate.status === 'bad' ? 15 : 0));
+  const incomplete = !headers.completed || (url.protocol === 'https:' && !certificate.completed);
+  return {
+    score, // A heuristic risk index, never a calibrated probability.
+    verdict: incomplete ? 'unknown' : score <= 33 ? 'safe' : score <= 66 ? 'suspicious' : 'malicious',
+    assessment: incomplete ? 'incomplete' : 'limited',
+    scoreVersion: 'heuristic-v2',
+    riskBreakdown: { urlPatterns: repScore, headers: headers.status === 'bad' ? 15 : 0, certificate: certificate.status === 'bad' ? 15 : 0, totalCap: 100 },
+    limitations: ['No live threat database lookup, page-content analysis or malware execution.',
+      'No vulnerability scan, certificate transparency or revocation verification.',
+      'A low score is not a guarantee of safety. Anonymous reports are unverified and do not affect the score.'],
     reasons,
     checks: {
-      reputation: {
-        status: repScore <= 33 ? 'ok' : repScore <= 66 ? 'warn' : 'bad',
-        detail: reasons.length ? 'Risk signals: ' + reasons.slice(0, 2).join('; ') : 'No suspicious patterns found.',
-      },
-      headers: headersResult,
-      certificate: certResult,
-      threat,
+      reputation: { status: repScore <= 33 ? 'ok' : repScore <= 66 ? 'warn' : 'bad',
+        detail: reasons.length ? 'URL heuristics: ' + reasons.join('; ') : 'No URL-pattern risk signals. No live reputation database was checked.' },
+      headers, certificate,
+      threat: { status: 'warn', count: communityReports, verified: false,
+        detail: `${communityReports} unverified community report(s). Reports are not proof of a threat and do not change the risk score.` },
     },
   };
+}
+
+export async function scan(input, { communityReports = 0 } = {}) {
+  const validated = validateTargetUrl(input);
+  if (!validated.ok) return { error: validated.error };
+  const url = validated.url;
+  let target;
+  try { target = await resolveTarget(url.hostname); }
+  catch (err) {
+    if (/private|reserved/.test(err.message)) return { error: err.message };
+    return buildResult(url, { status: 'warn', completed: false, checks: [], detail: 'DNS failed; HTTP headers could not be inspected.' },
+      { status: 'warn', completed: false, detail: 'DNS failed; certificate could not be inspected.' }, communityReports);
+  }
+  const [headers, certificate] = await Promise.all([
+    fetchHeaders(url, target).then(assessHeaders).catch(() => ({ status: 'warn', completed: false, checks: [], detail: 'HTTP inspection failed or timed out.' })),
+    validateCertificate(url, target),
+  ]);
+  return buildResult(url, headers, certificate, communityReports);
 }
 
 export { validateTargetUrl as validateUrl };
