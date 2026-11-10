@@ -191,3 +191,8 @@ Open **http://localhost:3001**, not the old port. `/api/health` on that same add
 ## Flame button integration
 
 The navigation and scanner submit controls use the JavaScript flame button in `client/src/components/ui/flame-button.jsx`. See [integration and optional shadcn/Tailwind/TypeScript setup](docs/flame-button.md) for paths, props, usage and framework setup notes.
+
+
+## Vercel
+
+See [Vercel deployment configuration and hosted storage](docs/vercel-deployment.md). The Vercel deployment uses an Express Function plus a hosted Turso/libSQL database. Local runs retain SQLite by default. Set the database URL/token as server-side secrets before publishing; the cloud runtime refuses ephemeral SQLite fallback. Configuration files do not mean a deployment has been published or verified.

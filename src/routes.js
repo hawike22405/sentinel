@@ -27,7 +27,15 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-router.get('/api/health', (_req, res) => res.json({ ok: true, service: 'sentinel', scannerVersion: 'heuristic-v2-redirects', scanTimeoutMs: 15000 }));
+router.get('/api/health', async (_req, res) => {
+  try {
+    await countReportsForHost(''); // verify storage, including credentials/schema in cloud mode
+    res.json({ ok: true, service: 'sentinel', scannerVersion: 'heuristic-v2-redirects', scanTimeoutMs: 15000,
+      storage: process.env.TURSO_DATABASE_URL ? 'hosted-libsql' : 'local-sqlite' });
+  } catch {
+    res.status(503).json({ ok: false, error: 'Persistent storage is unavailable.' });
+  }
+});
 
 router.post('/api/scan', async (req, res, next) => {
   try {
@@ -48,7 +56,7 @@ router.post('/api/scan', async (req, res, next) => {
     inFlight += 1;
     let result;
     try {
-      result = await scan(validated.url, { communityReports: countReportsForHost(validated.url.hostname) });
+      result = await scan(validated.url, { communityReports: await countReportsForHost(validated.url.hostname) });
     } finally {
       inFlight -= 1;
     }
@@ -58,17 +66,17 @@ router.post('/api/scan', async (req, res, next) => {
     }
 
     const id = randomUUID();
-    createScan({ id, url: validated.url.href, score: result.score, verdict: result.verdict, details: result });
+    await createScan({ id, url: validated.url.href, score: result.score, verdict: result.verdict, details: result });
     res.json({ ...result, id, url: storageUrl(validated.url), created_at: new Date().toISOString() });
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/api/scan/:id', (req, res, next) => {
+router.get('/api/scan/:id', async (req, res, next) => {
   try {
     if (!UUID.test(req.params.id)) return res.status(400).json({ error: 'Invalid scan id.' });
-    const record = getScanById(req.params.id);
+    const record = await getScanById(req.params.id);
     if (!record) return res.status(404).json({ error: 'Scan not found.' });
     res.json(record);
   } catch (err) {
@@ -76,9 +84,11 @@ router.get('/api/scan/:id', (req, res, next) => {
   }
 });
 
-router.get('/api/feed', (_req, res) => res.json({ reports: listReports(50) }));
+router.get('/api/feed', async (_req, res, next) => {
+  try { res.json({ reports: await listReports(50) }); } catch (err) { next(err); }
+});
 
-router.post('/api/feed/report', (req, res, next) => {
+router.post('/api/feed/report', async (req, res, next) => {
   try {
     const { url, type } = req.body || {};
     if (typeof url !== 'string' || !url.trim()) return res.status(422).json({ error: 'A URL is required.' });
@@ -90,7 +100,7 @@ router.post('/api/feed/report', (req, res, next) => {
       return res.status(422).json({ error: validated.error });
     }
     const id = randomUUID();
-    const inserted = createReport({ id, url: validated.url.href, type, source: 'user-report' }); // never trust a client-supplied source
+    const inserted = await createReport({ id, url: validated.url.href, type, source: 'user-report' }); // never trust a client-supplied source
     if (!inserted) return res.status(409).json({ error: 'This host and report type have already been reported.' });
     res.status(201).json({ id, url: storageUrl(validated.url), type, source: 'user-report', verified: false });
   } catch (err) {
@@ -99,10 +109,10 @@ router.post('/api/feed/report', (req, res, next) => {
 });
 
 // Moderation: remove an abusive or mistaken community report.
-router.delete('/api/admin/reports/:id', requireAdmin, (req, res, next) => {
+router.delete('/api/admin/reports/:id', requireAdmin, async (req, res, next) => {
   try {
     if (!UUID.test(req.params.id)) return res.status(400).json({ error: 'Invalid report id.' });
-    if (!deleteReport(req.params.id)) return res.status(404).json({ error: 'Report not found.' });
+    if (!await deleteReport(req.params.id)) return res.status(404).json({ error: 'Report not found.' });
     logSecurity('admin_report_deleted', { ip: req.ip, id: req.params.id });
     res.json({ deleted: req.params.id });
   } catch (err) {
