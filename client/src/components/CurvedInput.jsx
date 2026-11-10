@@ -23,6 +23,7 @@ export default function CurvedInput({
   disabled = false,
   ariaLabel = 'Website URL',
   className = '',
+  renderButton,
 }) {
   const rawId = useId();
   const uid = rawId.replace(/[^a-zA-Z0-9_-]/g, '');
@@ -170,7 +171,7 @@ export default function CurvedInput({
 
         <g mask={`url(#${maskId})`}>
           <rect className="ci-surface" x="-2" y="-2" width={w + 4} height={svgH + 4} />
-          {showButton && (
+          {showButton && !renderButton && (
             <rect
               className="ci-button-fill"
               x={btnX}
@@ -226,7 +227,7 @@ export default function CurvedInput({
           )}
         </g>
 
-        {showButton && (
+        {showButton && !renderButton && (
           <text className="ci-button-text" fontSize={14} textAnchor="middle">
             <textPath href={`#${textPathId}`} startOffset={arcLen(btnX + btnW / 2)}>
               {buttonText}
@@ -249,7 +250,11 @@ export default function CurvedInput({
           spellCheck={false}
           style={{ width: btnX }}
         />
-        {showButton && (
+        {showButton && (renderButton ? renderButton({
+          type: 'submit', disabled, 'aria-label': buttonText,
+          className: 'curved-input-flame',
+          style: { position: 'absolute', right: 0, top: centerY(btnX + btnW / 2) - h / 2, width: btnW },
+        }) : (
           <button
             type="submit"
             className="curved-input-button"
@@ -257,7 +262,7 @@ export default function CurvedInput({
             aria-label={buttonText}
             style={{ width: btnW }}
           />
-        )}
+        ))}
       </form>
     </div>
   );

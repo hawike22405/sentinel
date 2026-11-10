@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { mountRibbon } from '../ribbon.js';
 import CurvedInput from './CurvedInput';
+import { FlameButton } from '@/components/ui/flame-button';
 import { Component as BoxLoader } from '@/components/ui/loader-3';
 
 export default function Hero({ onScanComplete }) {
@@ -105,6 +106,10 @@ export default function Hero({ onScanComplete }) {
               onSubmit={handleSubmit}
               disabled={isScanning}
               ariaLabel="Website URL"
+              buttonWidth={144}
+              renderButton={(buttonProps) => (
+                <FlameButton {...buttonProps} text={isScanning ? 'Scanning…' : 'Scan link'} height={60} aria-busy={isScanning} />
+              )}
             />
           <div id="form-error" className="form-error" role="alert" aria-live="polite">
             {formError}
