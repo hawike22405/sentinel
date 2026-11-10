@@ -8,6 +8,7 @@ import Pillars from './components/Pillars';
 import ScanResult from './components/ScanResult';
 import ThreatFeed from './components/ThreatFeed';
 import Footer from './components/Footer';
+import { FlameButton } from '@/components/ui/flame-button';
 
 export default function App() {
   const [scanResult, setScanResult] = useState(null);
@@ -39,7 +40,7 @@ export default function App() {
           </a>
           <div className="nav-actions">
             <ThemeToggle />
-            <a href="#scan" className="btn btn--accent">Scan a link</a>
+            <FlameButton text="Scan a link" href="#hero" />
           </div>
         </div>
       </nav>

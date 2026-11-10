@@ -186,3 +186,8 @@ PORT=3001 npm start
 ```
 
 Open **http://localhost:3001**, not the old port. `/api/health` on that same address should report `scannerVersion: "heuristic-v2-redirects"`. The frontend intentionally rejects old API responses instead of displaying an unreliable Safe result. The startup callback now handles Express 5 bind errors before accessing the server address.
+
+
+## Flame button integration
+
+The navigation and scanner submit controls use the JavaScript flame button in `client/src/components/ui/flame-button.jsx`. See [integration and optional shadcn/Tailwind/TypeScript setup](docs/flame-button.md) for paths, props, usage and framework setup notes.

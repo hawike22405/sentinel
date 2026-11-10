@@ -77,3 +77,10 @@
 - Express 5 calls the listen callback on bind errors; the earlier port log dereferenced null before handling the error. Added explicit failure handling, cleanup and a useful EADDRINUSE message.
 - Verified with a real occupied-port fixture and a fresh isolated server that the current health/scan API satisfies the frontend version guard. Pulling frontend files without restarting an old API process explains the observed mismatch; the user's exact listener PID has not been inspected.
 - Added startup regressions to npm test, clarified the stale-backend UI message and documented starting on port 3001 and opening that exact URL.
+
+
+## Flame scan buttons — 10 November 2026
+- Adapted the supplied component to React JSX and scoped CSS at client/src/components/ui/flame-button.jsx. lucide-react was already installed; no providers, external images or framework migration needed.
+- Integrated with navigation (in-page #hero link) and CurvedInput (real submit control, current URL and pending disabled state retained). Added an optional renderButton slot; other CurvedInput callers keep their existing control.
+- Pointer-driven CSS variables provide the flare without an idle RAF loop. Preserved keyboard focus, disabled/touch behavior, reduced-motion styling and responsive button sizing. Added editor alias mapping, a non-conflicting demo and optional shadcn/Tailwind/TypeScript setup instructions in docs/flame-button.md.
+- Validation: DOM interaction checks for submit URL, disabled state, pointer edge tracking and internal/external navigation; production build, existing result-render tests and full frontend verifier passed. Full visual browser rendering was not exercised in this runtime.
